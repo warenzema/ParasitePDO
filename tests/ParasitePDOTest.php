@@ -50,6 +50,18 @@ class ParasitePDOTest extends TestCase
         $this->assertObjectCanQueryLikePDO($ParasitePDO);
     }
     
+    public function testStatementIsParasiteStatement()
+    {
+        $dbname = 'db'.uniqid();
+        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        
+        $ParasitePDO = new ParasitePDO($PDO);
+        
+        $statement = $ParasitePDO->query("CREATE DATABASE IF NOT EXISTS $dbname");
+        
+        $this->assertInstanceOf('ParasitePDO\ParasitePDOStatement', $statement);
+    }
+    
     /**
      * @param \PDO $PDOObject
      */
@@ -59,15 +71,17 @@ class ParasitePDOTest extends TestCase
         $tablename = 'parasite_pdo_test_table';
         $PDO = new \PDO($this->dsn,$this->username,$this->password);
         
-        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname");
-        $PDO->query("USE $this->dbname");
-        $PDO->query("DROP TABLE IF EXISTS $tablename");
-        $PDO->query("CREATE TABLE $tablename");
+        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
+        $PDO->query("USE $this->dbname")->execute();
+        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
+        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
         
-        $PDOObject->query("USE $this->dbname");
-        $count = $PDOObject->query("SELECT COUNT(*) FROM $tablename");
+        $PDOObject->query("USE $this->dbname")->execute();
+        $statement = $PDOObject->query("SELECT COUNT(*) FROM $tablename");
         
-        $this->assertEquals(0, $count);
+        $count = $statement->fetchColumn(0);
+        
+        $this->assertSame('0', $count);
     }
 }
 

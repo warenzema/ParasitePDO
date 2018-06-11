@@ -18,10 +18,12 @@ class ParasitePDO extends \PDO
     
     public function query()
     {
-        return call_user_func_array(
+        $PDOStatement = call_user_func_array(
             [$this->instance,__FUNCTION__],
             func_get_args()
         );
+        
+        return new ParasitePDOStatement($PDOStatement);
     }
 }
 

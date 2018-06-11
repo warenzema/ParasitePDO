@@ -41,7 +41,7 @@ class ParasitePDO extends \PDO
                 func_get_args()
             );
         } catch (\PDOException $e) {
-            new RethrowConstraintViolationException($e);
+            new RethrowConstraintViolationException($e,$statement);
         }
     }
 }

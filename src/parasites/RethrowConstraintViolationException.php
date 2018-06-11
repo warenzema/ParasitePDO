@@ -5,7 +5,7 @@ use ParasitePDO\exceptions\DuplicateKeyException;
 
 class RethrowConstraintViolationException implements IRethrowException
 {
-    public function __construct(\PDOException $PDOException)
+    public function __construct(\PDOException $PDOException,string $statement)
     {
         $code = $PDOException->getCode();
         if ($code >= 23000 && $code < 24000) {
@@ -15,7 +15,11 @@ class RethrowConstraintViolationException implements IRethrowException
                     $this->mysqlDuplicateKeyString
                 );
             if ($isMySQLDuplicateKeyException) {
-                throw new DuplicateKeyException();
+                throw new DuplicateKeyException(
+                    $statement,
+                    $code,
+                    $PDOException
+                );
             }
         }
     }

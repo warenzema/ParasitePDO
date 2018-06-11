@@ -25,5 +25,10 @@ class ParasitePDOStatement extends \PDOStatement
             func_get_args()
         );
     }
+    
+    public function getInstance()
+    {
+        return $this->instance;
+    }
 }
 

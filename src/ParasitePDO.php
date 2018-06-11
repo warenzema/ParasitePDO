@@ -1,6 +1,8 @@
 <?php
 namespace ParasitePDO;
 
+use ParasitePDO\exceptions\DuplicateKeyException;
+
 class ParasitePDO extends \PDO
 {
     private $instance;
@@ -23,7 +25,25 @@ class ParasitePDO extends \PDO
             func_get_args()
         );
         
-        return new ParasitePDOStatement($PDOStatement);
+        if (is_object($PDOStatement)) {
+            return new ParasitePDOStatement($PDOStatement);
+        } else {
+            return $PDOStatement;
+        }
+    }
+    
+    public function exec($statement)
+    {
+        try {
+            return call_user_func_array(
+                [$this->instance,__FUNCTION__],
+                func_get_args()
+            );
+        } catch (\PDOException $e) {
+            if (23000 == $e->getCode()) {
+                throw new DuplicateKeyException($e);
+            }
+        }
     }
 }
 

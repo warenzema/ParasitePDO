@@ -1,7 +1,8 @@
 <?php
 namespace ParasitePDO;
 
-use ParasitePDO\exceptions\mysql\DuplicateKeyException;
+use ParasitePDO\exceptions\DuplicateKeyException;
+use ParasitePDO\parasites\RethrowConstraintViolationException;
 
 class ParasitePDO extends \PDO
 {
@@ -40,9 +41,7 @@ class ParasitePDO extends \PDO
                 func_get_args()
             );
         } catch (\PDOException $e) {
-            if (23000 == $e->getCode()) {
-                throw new DuplicateKeyException($e);
-            }
+            new RethrowConstraintViolationException($e);
         }
     }
 }

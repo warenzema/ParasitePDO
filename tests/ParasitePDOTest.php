@@ -87,7 +87,7 @@ class ParasitePDOTest extends TestCase
         
         $ParasitePDO = new ParasitePDO($PDO);
         
-        $this->expectException('ParasitePDO\exceptions\mysql\DuplicateKeyException');
+        $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
         $ParasitePDO->exec("INSERT INTO $tablename (`id`) VALUES (1), (1)");
     }
     

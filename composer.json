@@ -1,0 +1,11 @@
+{
+	"name" : "warenzema/parasitepdo",
+	"autoload" : {
+		"psr-4" : {
+			"ParasitePDO\\" : "src/"
+		}
+	},
+	"require-dev" : {
+		"phpunit/phpunit" : "^7"
+	}
+}

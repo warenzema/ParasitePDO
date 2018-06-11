@@ -62,6 +62,17 @@ class ParasitePDOTest extends TestCase
         $this->assertInstanceOf('ParasitePDO\ParasitePDOStatement', $statement);
     }
     
+    public function testInvalidStatementIsFalse()
+    {
+        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        
+        $ParasitePDO = new ParasitePDO($PDO);
+        
+        $statement = $ParasitePDO->query("invalid statement");
+        
+        $this->assertFalse($statement);
+    }
+    
     public function testDuplicateKeyThrown()
     {
         $tablename = 'parasite_pdo_test_table';

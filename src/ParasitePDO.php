@@ -1,7 +1,7 @@
 <?php
 namespace ParasitePDO;
 
-use ParasitePDO\exceptions\DuplicateKeyException;
+use ParasitePDO\exceptions\mysql\DuplicateKeyException;
 
 class ParasitePDO extends \PDO
 {

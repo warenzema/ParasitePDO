@@ -16,6 +16,10 @@ class ParasitePDO extends \PDO
             $args = func_get_args();
             $this->instance = new \PDO(...$args);
         }
+        $this->instance->setAttribute(
+            \PDO::ATTR_STATEMENT_CLASS,
+            ['ParasitePDO\hosts\ParasitePDOStatement',[$this->instance]]
+        );
     }
     
     public function beginTransaction()
@@ -89,18 +93,20 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function query()
+    public function prepare($statement, $options = NULL)
     {
-        $PDOStatement = call_user_func_array(
+        return call_user_func_array(
             [$this->instance,__FUNCTION__],
             func_get_args()
         );
-        
-        if (is_object($PDOStatement)) {
-            return new ParasitePDOStatement($PDOStatement);
-        } else {
-            return $PDOStatement;
-        }
+    }
+    
+    public function query()
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
     }
     
     public function rollBack()

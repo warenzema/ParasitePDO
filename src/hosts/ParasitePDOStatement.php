@@ -1,5 +1,5 @@
 <?php
-namespace ParasitePDO;
+namespace ParasitePDO\hosts;
 
 class ParasitePDOStatement extends \PDOStatement
 {

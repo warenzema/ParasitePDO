@@ -1,5 +1,5 @@
 <?php
-namespace ParasitePDO;
+namespace ParasitePDO\hosts;
 
 use PHPUnit\Framework\TestCase;
 
@@ -14,7 +14,7 @@ class ParasitePDOTest extends TestCase
     {
         return [
             ['\PDO'],
-            ['ParasitePDO\ParasitePDO']
+            ['ParasitePDO\hosts\ParasitePDO']
         ];
     }
     
@@ -59,7 +59,7 @@ class ParasitePDOTest extends TestCase
         
         $statement = $ParasitePDO->query("CREATE DATABASE IF NOT EXISTS $dbname");
         
-        $this->assertInstanceOf('ParasitePDO\ParasitePDOStatement', $statement);
+        $this->assertInstanceOf('ParasitePDO\hosts\ParasitePDOStatement', $statement);
     }
     
     public function testInvalidStatementIsFalse()

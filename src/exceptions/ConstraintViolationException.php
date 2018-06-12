@@ -1,7 +1,7 @@
 <?php
 namespace ParasitePDO\exceptions;
 
-use ParasitePDO\ParasitePDOException;
+use ParasitePDO\hosts\ParasitePDOException;
 
 class ConstraintViolationException extends ParasitePDOException
 {

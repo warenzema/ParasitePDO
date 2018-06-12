@@ -1,5 +1,5 @@
 <?php
-namespace ParasitePDO;
+namespace ParasitePDO\hosts;
 
 use ParasitePDO\exceptions\DuplicateKeyException;
 use ParasitePDO\parasites\RethrowConstraintViolationException;

@@ -73,6 +73,80 @@ class ParasitePDOTest extends TestCase
         $this->assertFalse($statement);
     }
     
+    public function providerParentObjectPublicMethods()
+    {
+        $Reflection = new \ReflectionClass('\PDO');
+        $PublicMethods = $Reflection->getMethods(
+            \ReflectionMethod::IS_PUBLIC
+        );
+        
+        $StaticMethods = $Reflection->getMethods(
+            \ReflectionMethod::IS_STATIC
+        );
+        
+        $provider = [];
+        foreach ($PublicMethods as $ReflectionMethod) {
+            $publicMethodName = $ReflectionMethod->name;
+            //skip __construct, __sleep, and __wakeup
+            if (0 === strpos($publicMethodName, '__')) {
+                continue;
+            }
+            //skip public static methods
+            foreach ($StaticMethods as $StaticMethod) {
+                $staticMethodName = $StaticMethod->name;
+                if ($staticMethodName == $publicMethodName) {
+                    continue 2;
+                }
+            }
+            $provider[] = [$publicMethodName];
+        }
+        
+        return $provider;
+    }
+    
+    private $publicMethodArgs = [
+        'beginTransaction'=>[],
+        'commit'=>[],
+        'errorCode'=>[],
+        'errorInfo'=>[],
+        'exec'=>['blah blah'],
+        'getAttribute'=>[\PDO::ATTR_ERRMODE],
+        'inTransaction'=>[],
+        'lastInsertId'=>[],
+        'prepare'=>['blah blah'],//TODO
+        'query'=>['blah blah'],
+        'quote'=>[],
+        'rollBack'=>[],
+        'setAttribute'=>[\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION],
+    ];
+    
+    /**
+     * @dataProvider providerParentObjectPublicMethods
+     */
+    
+    public function testAllPublicMethodsAreOverwritten(
+        $method
+    )
+    {
+        $this->assertArrayHasKey($method, $this->publicMethodArgs);
+        $args = $this->publicMethodArgs[$method];
+        
+        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        
+        $ParasitePDO = new ParasitePDO($PDO);
+        try {
+            $ParasitePDO->$method(...$args);
+        } catch (\Exception $e) {
+            //we don't care about the error, so long as it isn't the
+            //one associated with a method not being set
+            $this->assertFalse(
+                strpos($e->getMessage(), 'PDO constructor was not called'),
+                "Method '$method' is not overwritten in ParasitePDO and will not function properly\n"
+            );
+        }
+    }
+    
+    
     /**
      * @param \PDO $PDOObject
      */

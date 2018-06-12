@@ -31,7 +31,7 @@ class RethrowConstraintViolationException implements IRethrowException
         $message = $this->PDOException->getMessage();
         $code = $this->PDOException->getCode();
         $rethrowExceptionClassName = 'ParasitePDO\exceptions\ConstraintViolationException';
-        if ($code >= 23000 && $code < 24000) {
+        if (is_numeric($code) && $code >= 23000 && $code < 24000) {
             $isMySQLDuplicateKeyException
                 = false !== strpos(
                     $message,

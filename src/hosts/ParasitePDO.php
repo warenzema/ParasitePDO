@@ -18,18 +18,36 @@ class ParasitePDO extends \PDO
         }
     }
     
-    public function query()
+    public function beginTransaction()
     {
-        $PDOStatement = call_user_func_array(
+        return call_user_func_array(
             [$this->instance,__FUNCTION__],
             func_get_args()
         );
-        
-        if (is_object($PDOStatement)) {
-            return new ParasitePDOStatement($PDOStatement);
-        } else {
-            return $PDOStatement;
-        }
+    }
+    
+    public function commit()
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
+    }
+    
+    public function errorCode()
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
+    }
+    
+    public function errorInfo()
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
     }
     
     public function exec($statement)
@@ -45,6 +63,60 @@ class ParasitePDO extends \PDO
             $Rethrow->setStatement($statement);
             $Rethrow->run();
         }
+    }
+    
+    public function getAttribute($attribute)
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
+    }
+    
+    public function inTransaction()
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
+    }
+    
+    public function lastInsertId($seqname = NULL)
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
+    }
+    
+    public function query()
+    {
+        $PDOStatement = call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
+        
+        if (is_object($PDOStatement)) {
+            return new ParasitePDOStatement($PDOStatement);
+        } else {
+            return $PDOStatement;
+        }
+    }
+    
+    public function rollBack()
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
+    }
+    
+    public function setAttribute($attribute,$value)
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
     }
 }
 

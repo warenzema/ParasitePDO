@@ -1,7 +1,6 @@
 <?php
 namespace ParasitePDO\hosts;
 
-use ParasitePDO\exceptions\DuplicateKeyException;
 use ParasitePDO\parasites\RethrowConstraintViolationException;
 
 class ParasitePDO extends \PDO
@@ -41,7 +40,10 @@ class ParasitePDO extends \PDO
                 func_get_args()
             );
         } catch (\PDOException $e) {
-            new RethrowConstraintViolationException($e,$statement);
+            $Rethrow = new RethrowConstraintViolationException();
+            $Rethrow->setPDOException($e);
+            $Rethrow->setStatement($statement);
+            $Rethrow->run();
         }
     }
 }

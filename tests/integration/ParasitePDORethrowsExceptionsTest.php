@@ -1,19 +1,29 @@
 <?php
+
+require_once __DIR__.'/../TestHelpers.php';
+
 use PHPUnit\Framework\TestCase;
 use ParasitePDO\hosts\ParasitePDO;
+use ParasitePDO\parasites\RethrowConstraintViolationException;
+use ParasitePDO\exceptions\DuplicateKeyException;
 
 class ParasitePDORethrowsExceptionsTest extends TestCase
 {
+    use TestHelpers;
     private $dsn = 'mysql:host=localhost';
     private $username = 'dbuser';
     private $password = '123';
     private $dbname = 'parasitepdotest';
     
     /**
-     * @testdox DuplicateKeyException is thrown when using ParasitePDO::exec() with a statement that causes duplicate key exception
+     * @dataProvider providerTrueFalse1
+     * 
+     * @testdox DuplicateKeyException is thrown when using ParasitePDO::exec() with a statement that causes duplicate key exception, but only if RethrowConstraintVioldationException is added to ParasitePDO; else the normal PDOException is thrown
      */
     
-    public function testDuplicateKeyThrownForQuery()
+    public function testDuplicateKeyThrownForExec(
+        $addRethrowConstraintViolationException
+    )
     {
         $tablename = 'parasite_pdo_test_table';
         $PDO = new \PDO($this->dsn,$this->username,$this->password);
@@ -27,16 +37,36 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         
         $ParasitePDO = new ParasitePDO($PDO);
         $query = "INSERT INTO $tablename (`id`) VALUES (1), (1)";
-        $this->expectExceptionMessage($query);
-        $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
-        $ParasitePDO->exec($query);
+        if ($addRethrowConstraintViolationException) {
+            $ParasitePDO->addRethrowException(new RethrowConstraintViolationException());
+        }
+        $exceptionCaught = false;
+        $isDuplicateKeyException = null;
+        try {
+            $ParasitePDO->exec($query);
+        } catch (\Exception $e) {
+            $exceptionCaught = true;
+            $isDuplicateKeyException = $e instanceof DuplicateKeyException;
+            $this->assertInstanceOf('PDOException', $e);
+        }
+        
+        $this->assertTrue($exceptionCaught);
+        
+        $this->assertSame(
+            $addRethrowConstraintViolationException,
+            $isDuplicateKeyException
+        );
     }
     
     /**
-     * @testdox DuplicateKeyException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute() with a statement that causes duplicate key exception
+     * @dataProvider providerTrueFalse1
+     * 
+     * @testdox DuplicateKeyException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute() with a statement that causes duplicate key exception, but only if RethrowConstraintVioldationException is added to ParasitePDO; else the normal PDOException is thrown
      */
     
-    public function testDuplicateKeyThrownForPrepare()
+    public function testDuplicateKeyThrownForPrepare(
+        $addRethrowConstraintViolationException
+    )
     {
         $tablename = 'parasite_pdo_test_table';
         $PDO = new \PDO($this->dsn,$this->username,$this->password);
@@ -50,10 +80,26 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         
         $ParasitePDO = new ParasitePDO($PDO);
         $query = "INSERT INTO $tablename (`id`) VALUES (1), (1)";
-        $Statement = $ParasitePDO->prepare($query);
-        $this->expectExceptionMessage($query);
-        $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
-        $Statement->execute();
+        
+        if ($addRethrowConstraintViolationException) {
+            $ParasitePDO->addRethrowException(new RethrowConstraintViolationException());
+        }
+        $exceptionCaught = false;
+        $isDuplicateKeyException = null;
+        try {
+            $Statement = $ParasitePDO->prepare($query);
+            $Statement->execute();
+        } catch (\Exception $e) {
+            $exceptionCaught = true;
+            $isDuplicateKeyException = $e instanceof DuplicateKeyException;
+        }
+        
+        $this->assertTrue($exceptionCaught);
+        
+        $this->assertSame(
+            $addRethrowConstraintViolationException,
+            $isDuplicateKeyException
+        );
     }
     
     /**
@@ -73,6 +119,7 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
         
         $ParasitePDO = new ParasitePDO($PDO);
+        $ParasitePDO->addRethrowException(new RethrowConstraintViolationException());
         $query = "INSERT INTO $tablename (`id`) VALUES (1), (1), (:key3), (:key4)";
         $Statement = $ParasitePDO->prepare($query);
         

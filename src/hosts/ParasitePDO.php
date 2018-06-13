@@ -2,6 +2,7 @@
 namespace ParasitePDO\hosts;
 
 use ParasitePDO\parasites\RethrowConstraintViolationException;
+use ParasitePDO\parasites\IRethrowException;
 
 class ParasitePDO extends \PDO
 {
@@ -58,10 +59,12 @@ class ParasitePDO extends \PDO
                 func_get_args()
             );
         } catch (\PDOException $e) {
-            $Rethrow = new RethrowConstraintViolationException();
-            $Rethrow->setPDOException($e);
-            $Rethrow->setStatement($statement);
-            $Rethrow->run();
+            foreach ($this->RethrowExceptions as $RethrowException) {
+                $RethrowException->setPDOException($e);
+                $RethrowException->setStatement($statement);
+                $RethrowException->run();
+            }
+            throw $e;
         }
     }
     
@@ -93,7 +96,13 @@ class ParasitePDO extends \PDO
     {
         $this->instance->setAttribute(
             \PDO::ATTR_STATEMENT_CLASS,
-            ['ParasitePDO\hosts\ParasitePDOStatement',[$this->instance,[new RethrowConstraintViolationException()]]]
+            [
+                'ParasitePDO\hosts\ParasitePDOStatement',
+                [
+                    $this->instance,
+                    $this->RethrowExceptions
+                ]
+            ]
         );
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -107,6 +116,8 @@ class ParasitePDO extends \PDO
             \PDO::ATTR_STATEMENT_CLASS,
             ['ParasitePDO\hosts\ParasitePDOStatement',[$this->instance,[new RethrowConstraintViolationException()]]]
         );
+        //TODO needs to be updated to follow what prepare() does
+        //currently lacking covering test
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
             func_get_args()
@@ -127,6 +138,27 @@ class ParasitePDO extends \PDO
             [$this->instance,__FUNCTION__],
             func_get_args()
         );
+    }
+    
+    public function setRethrowExceptions(array $RethrowExceptions)
+    {
+        $this->RethrowExceptions = [];
+        foreach ($RethrowExceptions as $RethrowException) {
+            $this->addRethrowException($RethrowException);
+        }
+    }
+    
+    private $RethrowExceptions = [];
+    public function getRethrowExceptions()
+    {
+        return $this->RethrowExceptions;
+    }
+    
+    public function addRethrowException(
+        IRethrowException $RethrowException
+    )
+    {
+        $this->RethrowExceptions[] = $RethrowException;
     }
 }
 

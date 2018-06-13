@@ -206,6 +206,207 @@ class ParasitePDOTest extends TestCase
         }
     }
     
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @group getRethrowExceptions()
+     * 
+     * @testdox getRethrowExceptions()===[] by default
+     */
+    
+    public function testGetRethrowExceptionsEmptyArrayByDefault(
+        $injectPDOInsteadOfConstruct
+    )
+    {
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        
+        $this->assertSame(
+            [],
+            $ParasitePDO->getRethrowExceptions()
+        );
+    }
+    
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @group getRethrowExceptions()
+     * @group addRethrowException()
+     * 
+     * @testdox addRethrowException() adds object of type IRethrowException to the output of getRethrowExceptions()
+     */
+    
+    public function testAddRethrowExceptionAddsToGetter(
+        $injectPDOInsteadOfConstruct
+    )
+    {
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        
+        $RethrowException1 = $this->returnRethrowExceptionMock();
+        $RethrowException2 = $this->returnRethrowExceptionMock();
+        $RethrowException3 = $this->returnRethrowExceptionMock();
+        
+        $this->assertSame(
+            [],
+            $ParasitePDO->getRethrowExceptions()
+        );
+        
+        //add 1
+        $ParasitePDO->addRethrowException($RethrowException1);
+        
+        $this->assertSame(
+            [
+                $RethrowException1
+            ],
+            $ParasitePDO->getRethrowExceptions()
+        );
+        
+        //add 2
+        $ParasitePDO->addRethrowException($RethrowException2);
+        
+        $this->assertSame(
+            [
+                $RethrowException1,
+                $RethrowException2
+            ],
+            $ParasitePDO->getRethrowExceptions()
+        );
+        
+        //add 3
+        $ParasitePDO->addRethrowException($RethrowException3);
+        
+        $this->assertSame(
+            [
+                $RethrowException1,
+                $RethrowException2,
+                $RethrowException3
+            ],
+            $ParasitePDO->getRethrowExceptions()
+        );
+    }
+    
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @group setRethrowExceptions()
+     * 
+     * @testdox setRethrowExceptions() throws TypeError if any values are not object implementing the interface IRethrowException
+     */
+    
+    public function testSetRethrowThrowsTypeErrorIfNotValidObject(
+        $injectPDOInsteadOfConstruct
+    )
+    {
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        
+        $this->expectException('TypeError');
+        $ParasitePDO->setRethrowExceptions([uniqid()]);
+    }
+    
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @group setRethrowExceptions()
+     * 
+     * @testdox setRethrowExceptions([]) causes getRethrowExceptions()===[]
+     */
+    
+    public function testSetEmptyRethrowExceptionsRemoveAll(
+        $injectPDOInsteadOfConstruct
+    )
+    {
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        
+        $RethrowException1 = $this->returnRethrowExceptionMock();
+        
+        //add 1
+        $ParasitePDO->addRethrowException($RethrowException1);
+        
+        $this->assertSame(
+            [
+                $RethrowException1
+            ],
+            $ParasitePDO->getRethrowExceptions()
+        );
+        
+        //remove rethrows
+        $ParasitePDO->setRethrowExceptions([]);
+        
+        $this->assertSame(
+            [],
+            $ParasitePDO->getRethrowExceptions()
+        );
+    }
+    
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @group setRethrowExceptions()
+     * 
+     * @testdox setRethrowExceptions() ignores what was previously added with addRethrowException() and instead replaces all values returned by getRethrowExceptions()
+     */
+    
+    public function testSetRethrowExceptionsOverwritesExisting(
+        $injectPDOInsteadOfConstruct
+    )
+    {
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        
+        $RethrowException1 = $this->returnRethrowExceptionMock();
+        $RethrowException2 = $this->returnRethrowExceptionMock();
+        $RethrowException3 = $this->returnRethrowExceptionMock();
+        
+        $this->assertSame(
+            [],
+            $ParasitePDO->getRethrowExceptions()
+        );
+        
+        //add 1
+        $ParasitePDO->addRethrowException($RethrowException1);
+        
+        $this->assertSame(
+            [
+                $RethrowException1
+            ],
+            $ParasitePDO->getRethrowExceptions()
+        );
+        
+        //set 2 and 3
+        $ParasitePDO->setRethrowExceptions(
+            [
+                $RethrowException2,
+                $RethrowException3
+            ]
+        );
+        
+        $this->assertSame(
+            [
+                $RethrowException2,
+                $RethrowException3
+            ],
+            $ParasitePDO->getRethrowExceptions()
+        );
+    }
+    
     private function returnInjectedParasitePDO()
     {
         $PDO = new \PDO($this->dsn,$this->username,$this->password);
@@ -216,6 +417,13 @@ class ParasitePDOTest extends TestCase
     private function returnConstructedParasitePDO()
     {
         return new ParasitePDO($this->dsn,$this->username,$this->password);
+    }
+    
+    private function returnRethrowExceptionMock()
+    {
+        return $this->getMockBuilder(
+            'ParasitePDO\parasites\IRethrowException'
+        )->getMock();
     }
 }
 

@@ -9,6 +9,10 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     private $password = '123';
     private $dbname = 'parasitepdotest';
     
+    /**
+     * @testdox DuplicateKeyException is thrown when using ParasitePDO::exec() with a statement that causes duplicate key exception
+     */
+    
     public function testDuplicateKeyThrownForQuery()
     {
         $tablename = 'parasite_pdo_test_table';
@@ -27,6 +31,10 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
         $ParasitePDO->exec($query);
     }
+    
+    /**
+     * @testdox DuplicateKeyException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute() with a statement that causes duplicate key exception
+     */
     
     public function testDuplicateKeyThrownForPrepare()
     {
@@ -47,6 +55,10 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
         $Statement->execute();
     }
+    
+    /**
+     * @testdox DuplicateKeyException includes bound params if present
+     */
     
     public function testDupKeyAddsBoundParams()
     {

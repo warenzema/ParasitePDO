@@ -176,6 +176,8 @@ class ParasitePDOTest extends TestCase
     
     /**
      * @dataProvider providerParentObjectPublicMethodsTrueFalse1
+     * 
+     * @testdox All public methods are overridden to work with both methods of constructing the ParasitePDO object
      */
     
     public function testAllPublicMethodsAreOverwritten(

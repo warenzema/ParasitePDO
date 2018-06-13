@@ -60,6 +60,10 @@ class RethrowConstraintViolationExceptionTest extends TestCase
     
     /**
      * @dataProvider provider23000To23999
+     * 
+     * @group run()
+     * 
+     * @testdox run() throws ConstraintViolationException if 23000 <= $code < 24000, where $code is the 2nd argument of the setPDOException() arg's constructor
      */
     
     public function testRunThrowsConstraintViolationIfIn23000CodeRange(
@@ -83,6 +87,12 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $SUT->run();
     }
     
+    /**
+     * @group run()
+     * 
+     * @testdox run() adds the setStatement()'s arg to the ConstraintViolationException's message if the exception is thrown
+     */
+    
     public function testIfExceptionThrownThenMessageIsStatement()
     {
         $PDOException = new \PDOException(
@@ -102,6 +112,12 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         
         $SUT->run();
     }
+    
+    /**
+     * @group run()
+     * 
+     * @testdox run() sets the setPDOException()'s arg to the ConstraintViolationException's previous exception if the exception is thrown
+     */
     
     public function testConstraintViolationSetsPrevExceptionAsSetPDOException()
     {
@@ -127,6 +143,12 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         }
     }
     
+    /**
+     * @group run()
+     * 
+     * @testdox run() throws DuplicateKeyException instead of ConstraintViolationException if the setPDOException()'s arg's message contains text indicating there is a duplicate entry, using MySQL's syntax
+     */
+    
     public function testIfPrevExceptionHasMysqlDupKeyThenThrowsDupKey()
     {
         $PDOException = new \PDOException(
@@ -146,6 +168,12 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         
         $SUT->run();
     }
+    
+    /**
+     * @group run()
+     * 
+     * @testdox run() sets the setPDOException()'s arg to the DuplicateKeyException previous exception if the exception is thrown
+     */
     
     public function testDupKeySetsPrevExceptionAsSetPDOException()
     {
@@ -168,10 +196,36 @@ class RethrowConstraintViolationExceptionTest extends TestCase
                 $PDOException,
                 $e->getPrevious()
             );
+            $this->assertInstanceOf(
+                'ParasitePDO\exceptions\DuplicateKeyException',
+                $e
+            );
         }
     }
     
-    public function testNoBoundParamsStatesAsSuch()
+    public function providerSetBoundInputParamsAndArg()
+    {
+        return [
+            [true,null],
+            [true,[]],
+            [true,''],
+            [false,null],
+        ];
+    }
+    
+    /**
+     * @dataProvider providerSetBoundInputParamsAndArg
+     * 
+     * @group run()
+     * @group setBoundInputParams()
+     * 
+     * @testdox run() adds "No params were bound" to the ConstraintViolationException's message if the exception is thrown and setBoundInputParams() is either not set or it's arg is empty
+     */
+    
+    public function testNoBoundParamsStatesAsSuch(
+        $setBoundInputParams,
+        $boundInputParams
+    )
     {
         $PDOException = new \PDOException(
             "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '1' for key 'PRIMARY'",
@@ -179,13 +233,14 @@ class RethrowConstraintViolationExceptionTest extends TestCase
             null
         );
         $statement = uniqid();
-        $boundInputParams = [];
         
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
-        $SUT->setBoundInputParams($boundInputParams);
+        if ($setBoundInputParams) {
+            $SUT->setBoundInputParams($boundInputParams);
+        }
         
         $expectedExceptionMessage = "$statement\n\nNo params were bound.";
         
@@ -194,6 +249,13 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         
         $SUT->run();
     }
+    
+    /**
+     * @group run()
+     * @group setBoundInputParams()
+     * 
+     * @testdox run() adds key value pairs from setBoundInputParams()'s arg to ConstraintViolationException's message if exception is thrown and arg is associative array
+     */
     
     public function testBoundParamsSetAddsThoseParamsToMessage()
     {

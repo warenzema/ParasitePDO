@@ -3,6 +3,7 @@ namespace ParasitePDO\hosts;
 
 class ParasitePDOStatement extends \PDOStatement
 {
+    
     private $RethrowExceptions = [];
     protected function __construct($pdo,$RethrowExceptions)
     {
@@ -18,6 +19,7 @@ class ParasitePDOStatement extends \PDOStatement
             foreach ($this->RethrowExceptions as $RethrowException) {
                 $RethrowException->setPDOException($e);
                 $RethrowException->setStatement($this->queryString);
+                $RethrowException->setBoundInputParams($bound_input_params);
                 $RethrowException->run();
             }
             throw $e;

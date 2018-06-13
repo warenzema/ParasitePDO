@@ -171,6 +171,57 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         }
     }
     
+    public function testNoBoundParamsStatesAsSuch()
+    {
+        $PDOException = new \PDOException(
+            "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '1' for key 'PRIMARY'",
+            23000,
+            null
+        );
+        $statement = uniqid();
+        $boundInputParams = [];
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setBoundInputParams($boundInputParams);
+        
+        $expectedExceptionMessage = "$statement\n\nNo params were bound.";
+        
+        $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
+        $this->expectExceptionMessage($expectedExceptionMessage);
+        
+        $SUT->run();
+    }
+    
+    public function testBoundParamsSetAddsThoseParamsToMessage()
+    {
+        $PDOException = new \PDOException(
+            "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '1' for key 'PRIMARY'",
+            23000,
+            null
+        );
+        $statement = uniqid();
+        $boundInputParams = [
+            $key1=uniqid()=>$value1=uniqid(),
+            $key2=uniqid()=>$value2=uniqid(),
+        ];
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setBoundInputParams($boundInputParams);
+        
+        $expectedExceptionMessage = "$statement\n\nBound with: '$key1'=>'$value1', '$key2'=>'$value2'";
+        
+        $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
+        $this->expectExceptionMessage($expectedExceptionMessage);
+        
+        $SUT->run();
+    }
+    
     private function returnSubjectUnderTest()
     {
         return new RethrowConstraintViolationException();

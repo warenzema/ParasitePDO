@@ -99,7 +99,6 @@ class ParasitePDO extends \PDO
             [
                 'ParasitePDO\hosts\ParasitePDOStatement',
                 [
-                    $this->instance,
                     $this->RethrowExceptions
                 ]
             ]
@@ -114,7 +113,7 @@ class ParasitePDO extends \PDO
     {
         $this->instance->setAttribute(
             \PDO::ATTR_STATEMENT_CLASS,
-            ['ParasitePDO\hosts\ParasitePDOStatement',[$this->instance,[new RethrowConstraintViolationException()]]]
+            ['ParasitePDO\hosts\ParasitePDOStatement',[[new RethrowConstraintViolationException()]]]
         );
         //TODO needs to be updated to follow what prepare() does
         //currently lacking covering test

@@ -5,7 +5,7 @@ class ParasitePDOStatement extends \PDOStatement
 {
     
     private $RethrowExceptions = [];
-    protected function __construct($pdo,$RethrowExceptions)
+    protected function __construct($RethrowExceptions)
     {
         $this->RethrowExceptions = $RethrowExceptions;
     }

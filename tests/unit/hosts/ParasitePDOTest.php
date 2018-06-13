@@ -1,10 +1,13 @@
 <?php
 namespace ParasitePDO\hosts;
 
+require_once __DIR__.'/../../TestHelpers.php';
+
 use PHPUnit\Framework\TestCase;
 
 class ParasitePDOTest extends TestCase
 {
+    use \TestHelpers;
     private $dsn = 'mysql:host=localhost';
     private $username = 'dbuser';
     private $password = '123';
@@ -21,101 +24,95 @@ class ParasitePDOTest extends TestCase
     /**
      * @dataProvider providerPDOClassNames
      * 
-     * @testdox ParasitePDO instantiates the same way as a \PDO object instantiates, and is an instance of a \PDO object
+     * @testdox ParasitePDO can instantiate the same way as a \PDO object instantiates, and is an instance of a \PDO object
      */
     
-    public function testInstantiateAndQuery($className)
+    public function testInstantiate($className)
     {
         $object = new $className($this->dsn,$this->username,$this->password);
         
         $this->assertInstanceOf($className, $object);
         
         $this->assertInstanceOf('\PDO',$object);
-        
-        $this->assertObjectCanQueryLikePDO($object);
     }
     
     /**
      * @testdox ParasitePDO can accept a \PDO object during construction instead of the normal arguments \PDO::__construct() uses
      */
     
-    public function testCanInjectAndQuery()
+    public function testCanInject()
     {
         $PDO = new \PDO($this->dsn,$this->username,$this->password);
         
         $ParasitePDO = new ParasitePDO($PDO);
         
         $this->assertInstanceOf('\PDO',$ParasitePDO);
-        
-        $this->assertObjectCanQueryLikePDO($ParasitePDO);
     }
     
-     /**
-     * @dataProvider providerPDOClassNames
+    /**
+     * @dataProvider providerTrueFalse2
      * 
-     * @testdox ParasitePDO instantiates the same way as a \PDO object instantiates, and is an instance of a \PDO object
+     * @group query()
+     * @group prepare()
+     * 
+     * @testdox query() and prepare() return ParasitePDOStatement objects upon success
      */
     
-    public function testInstantiateAndPrepare($className)
-    {
-        $object = new $className($this->dsn,$this->username,$this->password);
-        
-        $this->assertInstanceOf($className, $object);
-        
-        $this->assertInstanceOf('\PDO',$object);
-        
-        $this->assertObjectCanPrepareLikePDO($object);
-    }
-    
-    /**
-     * @testdox ParasitePDO can accept a \PDO object during construction instead of the normal arguments \PDO::__construct() uses
-     */
-    
-    public function testCanInjectAndPrepare()
-    {
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
-        
-        $ParasitePDO = new ParasitePDO($PDO);
-        
-        $this->assertInstanceOf('\PDO',$ParasitePDO);
-        
-        $this->assertObjectCanPrepareLikePDO($ParasitePDO);
-    }
-    
-    public function testReturnedQueryStatementIsParasiteStatement()
+    public function testReturnedQueryStatementIsParasiteStatement(
+        $injectPDOInsteadOfConstruct,
+        $prepareInsteadOfQuery
+    )
     {
         $dbname = 'db'.uniqid();
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
         
-        $ParasitePDO = new ParasitePDO($PDO);
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
         
-        $statement = $ParasitePDO->query("CREATE DATABASE IF NOT EXISTS $dbname");
+        if ($prepareInsteadOfQuery) {
+            $statement = $ParasitePDO
+                ->prepare("CREATE DATABASE IF NOT EXISTS $dbname");
+        } else {
+            $statement = $ParasitePDO
+                ->query("CREATE DATABASE IF NOT EXISTS $dbname");
+        }
         
-        $this->assertInstanceOf('ParasitePDO\hosts\ParasitePDOStatement', $statement);
+        $this->assertInstanceOf(
+            'ParasitePDO\hosts\ParasitePDOStatement',
+            $statement
+        );
     }
     
-    public function testReturnedQueryInvalidStatementIsFalse()
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @group query()
+     * 
+     * @testdox query()===false if arg is invalid SQL statement
+     */
+    
+    public function testReturnedQueryInvalidStatementIsFalse(
+        $injectPDOInsteadOfConstruct
+    )
     {
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
-        
-        $ParasitePDO = new ParasitePDO($PDO);
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
         
         $statement = $ParasitePDO->query("invalid statement");
         
         $this->assertFalse($statement);
     }
     
-    public function testReturnedPrepareStatementIsParasiteStatement()
-    {
-        $dbname = 'db'.uniqid();
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
-        
-        $ParasitePDO = new ParasitePDO($PDO);
-        
-        $statement = $ParasitePDO->prepare("CREATE DATABASE IF NOT EXISTS $dbname");
-        
-        $this->assertInstanceOf('ParasitePDO\hosts\ParasitePDOStatement', $statement);
-    }
+    /**
+     * @group prepare()
+     * 
+     * @testdox prepare()===false if unable to prepare statement; This is untested as a way to force \PDO::prepare() to return false was not found.
+     */
     
     public function testReturnedPrepareInvalidStatementIsFalse()
     {
@@ -153,6 +150,14 @@ class ParasitePDOTest extends TestCase
         return $provider;
     }
     
+    public function providerParentObjectPublicMethodsTrueFalse1()
+    {
+        return $this->mergeDataProviders(
+            $this->providerParentObjectPublicMethods(),
+            $this->providerTrueFalse1()
+        );
+    }
+    
     private $publicMethodArgs = [
         'beginTransaction'=>[],
         'commit'=>[],
@@ -162,7 +167,7 @@ class ParasitePDOTest extends TestCase
         'getAttribute'=>[\PDO::ATTR_ERRMODE],
         'inTransaction'=>[],
         'lastInsertId'=>[],
-        'prepare'=>['blah blah'],//TODO
+        'prepare'=>['blah blah'],
         'query'=>['blah blah'],
         'quote'=>[],
         'rollBack'=>[],
@@ -170,19 +175,23 @@ class ParasitePDOTest extends TestCase
     ];
     
     /**
-     * @dataProvider providerParentObjectPublicMethods
+     * @dataProvider providerParentObjectPublicMethodsTrueFalse1
      */
     
     public function testAllPublicMethodsAreOverwritten(
-        $method
+        $method,
+        $injectPDOInsteadOfConstruct
     )
     {
         $this->assertArrayHasKey($method, $this->publicMethodArgs);
         $args = $this->publicMethodArgs[$method];
         
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
         
-        $ParasitePDO = new ParasitePDO($PDO);
         try {
             $ParasitePDO->$method(...$args);
         } catch (\Exception $e) {
@@ -195,50 +204,16 @@ class ParasitePDOTest extends TestCase
         }
     }
     
-    
-    /**
-     * @param \PDO $PDOObject
-     */
-    
-    private function assertObjectCanQueryLikePDO($PDOObject)
+    private function returnInjectedParasitePDO()
     {
-        $tablename = 'parasite_pdo_test_table';
         $PDO = new \PDO($this->dsn,$this->username,$this->password);
         
-        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
-        $PDO->query("USE $this->dbname")->execute();
-        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
-        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
-        
-        $PDOObject->query("USE $this->dbname")->execute();
-        $statement = $PDOObject->query("SELECT COUNT(*) FROM $tablename");
-        
-        $count = $statement->fetchColumn(0);
-        
-        $this->assertSame('0', $count);
+        return new ParasitePDO($PDO);
     }
     
-    /**
-     * @param \PDO $PDOObject
-     */
-    
-    private function assertObjectCanPrepareLikePDO($PDOObject)
+    private function returnConstructedParasitePDO()
     {
-        $tablename = 'parasite_pdo_test_table';
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
-        
-        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
-        $PDO->query("USE $this->dbname")->execute();
-        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
-        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
-        
-        $PDOObject->query("USE $this->dbname")->execute();
-        $statement = $PDOObject->prepare("SELECT COUNT(*) FROM $tablename");
-        
-        $statement->execute();
-        $count = $statement->fetchColumn(0);
-        
-        $this->assertSame('0', $count);
+        return new ParasitePDO($this->dsn,$this->username,$this->password);
     }
 }
 

@@ -22,7 +22,7 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     {
         parent::setUp();
         
-        $this->setupDatabaseAndTable();
+        //$this->setupDatabaseAndTable();
     }
     
     /**
@@ -244,12 +244,107 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         );
     }
     
+    /**
+     * @dataProvider providerTrueFalse2
+     * 
+     */
+    
+    public function testRethrowOnDeadlockWithQuery(
+        $injectPDOInsteadOfConstruct,
+        $addRethrowWithQueryInfo
+    )
+    {
+        $this->setupDatabaseAndTable();
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO1 = $this->returnInjectedParasitePDO();
+            $ParasitePDO2 = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO1 = $this->returnConstructedParasitePDO();
+            $ParasitePDO2 = $this->returnConstructedParasitePDO();
+        }
+        $ParasitePDO1->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $ParasitePDO1->query("USE $this->dbname")->execute();
+        
+        $ParasitePDO2->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $ParasitePDO2->query("USE $this->dbname")->execute();
+        
+        $query = "INSERT INTO $this->tablename (`id`) VALUES (1),(2),(3)";
+        $ParasitePDO1->exec($query);
+        
+        $selectForUpdate1 = "SELECT id FROM $this->tablename WHERE id=1 FOR UPDATE";
+        $selectForUpdate2 = "SELECT id FROM $this->tablename WHERE id=2 FOR UPDATE";
+        if ($addRethrowWithQueryInfo) {
+            $ParasitePDO1->addRethrowException(
+                (new RethrowExceptionWithQueryInfoFactory())
+                ->build()
+            );
+            $ParasitePDO2->addRethrowException(
+                (new RethrowExceptionWithQueryInfoFactory())
+                ->build()
+            );
+        }
+        $exceptionCaught = false;
+        $isParasitePDOException = null;
+        $e = null;
+        
+        $phpunit = "php ../vendor/bin/phpunit";
+        
+        $command = "$phpunit --filter testDeadlock1 integration/ParasitePDORethrowsExceptionsTest > /dev/null 2>&1 &";
+        try {
+            //need to not wait
+            $ParasitePDO1->beginTransaction();
+            $ParasitePDO1->query($selectForUpdate1);
+            exec($command);
+            sleep(1);
+            $ParasitePDO1->query($selectForUpdate2);
+        } catch (\Exception $e) {
+            $exceptionCaught = true;
+            $isParasitePDOException = $e instanceof ParasitePDOException;
+            $this->assertInstanceOf('PDOException', $e);
+        }
+        
+        $this->assertTrue($exceptionCaught);
+        
+        $this->assertSame(
+            $addRethrowWithQueryInfo,
+            $isParasitePDOException,
+            $e
+        );
+    }
+    
+    public function testDeadlock1()
+    {
+        $ParasitePDO2 = $this->returnInjectedParasitePDO();
+        
+        $ParasitePDO2->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $ParasitePDO2->query("USE $this->dbname")->execute();
+        
+        $ParasitePDO2->query("INSERT INTO $this->tablename (`id`) VALUES (4)");
+        
+        $selectForUpdate1 = "SELECT id FROM $this->tablename WHERE id=1 FOR UPDATE";
+        $selectForUpdate2 = "SELECT id FROM $this->tablename WHERE id=2 FOR UPDATE";
+        
+        $ParasitePDO2->beginTransaction();
+        $ParasitePDO2->query($selectForUpdate2);
+        $ParasitePDO2->query($selectForUpdate1);
+        sleep(5);
+        $ParasitePDO2->commit();
+    }
+    
+    /**
+     * @return \ParasitePDO\hosts\ParasitePDO
+     */
+    
     private function returnInjectedParasitePDO()
     {
         $PDO = new \PDO($this->dsn,$this->username,$this->password);
         
         return new ParasitePDO($PDO);
     }
+    
+    /**
+     * @return \ParasitePDO\hosts\ParasitePDO
+     */
     
     private function returnConstructedParasitePDO()
     {

@@ -63,8 +63,6 @@ class ParasitePDOTest extends TestCase
         $prepareInsteadOfQuery
     )
     {
-        $dbname = 'db'.uniqid();
-        
         if ($injectPDOInsteadOfConstruct) {
             $ParasitePDO = $this->returnInjectedParasitePDO();
         } else {
@@ -73,10 +71,10 @@ class ParasitePDOTest extends TestCase
         
         if ($prepareInsteadOfQuery) {
             $statement = $ParasitePDO
-                ->prepare("CREATE DATABASE IF NOT EXISTS $dbname");
+                ->prepare("CREATE DATABASE IF NOT EXISTS $this->dbname");
         } else {
             $statement = $ParasitePDO
-                ->query("CREATE DATABASE IF NOT EXISTS $dbname");
+                ->query("CREATE DATABASE IF NOT EXISTS $this->dbname");
         }
         
         $this->assertInstanceOf(

@@ -1,11 +1,14 @@
 <?php
 namespace ParasitePDO\unit\parasites;
 
+require_once __DIR__.'/../../TestHelpers.php';
+
 use PHPUnit\Framework\TestCase;
 use ParasitePDO\parasites\RethrowConstraintViolationException;
 
 class RethrowConstraintViolationExceptionTest extends TestCase
 {
+    use \TestHelpers;
     /**
      * @group setPDOException()
      * @group run()
@@ -48,6 +51,27 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $SUT->run();
     }
     
+    /**
+     * @group setFormatExceptionMessage()
+     * @group run()
+     * 
+     * @testdox run() throws SetterRequiredException if not setFormatExceptionMessage()
+     */
+    
+    public function testRunThrowsSetterRequiredIfNotSetFormatExceptionMessage()
+    {
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $this->setRequiredSettersExceptAsSpecified(
+            $SUT,
+            ['setFormatExceptionMessage']
+        );
+        
+        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        
+        $SUT->run();
+    }
+    
     public function provider23000To23999()
     {
         return [
@@ -77,10 +101,13 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         );
         $statement = uniqid();
         
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
         
         $this->expectException('ParasitePDO\exceptions\ConstraintViolationException');
         
@@ -88,27 +115,59 @@ class RethrowConstraintViolationExceptionTest extends TestCase
     }
     
     /**
+     * @dataProvider providerTrueFalse1
+     * 
      * @group run()
      * 
-     * @testdox run() adds the setStatement()'s arg to the ConstraintViolationException's message if the exception is thrown
+     * @testdox run() formats an exception message using the previous exception message and the query string if the exception is thrown; Also the boundInputParams are passed, if set
      */
     
-    public function testIfExceptionThrownThenMessageIsStatement()
+    public function testIfExceptionThrownThenMessageIsFormatted(
+        $setBoundInputParams
+    )
     {
         $PDOException = new \PDOException(
-            uniqid(),
+           $previousExceptionMessage = uniqid(),
             23000,
             null
         );
         $statement = uniqid();
+        $boundInputParams = [uniqid()=>uniqid()];
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('setPreviousExceptionMessage')
+            ->with($this->equalTo($previousExceptionMessage));
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('setQueryString')
+            ->with($this->equalTo($statement));
+        if ($setBoundInputParams) {
+            $FormatExceptionMessage
+                ->expects($this->once())
+                ->method('setBoundInputParams')
+                ->with($this->equalTo($boundInputParams));
+        }
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('run');
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue($formattedExceptionMessage=uniqid()));
         
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        if ($setBoundInputParams) {
+            $SUT->setBoundInputParams($boundInputParams);
+        }
         
         $this->expectException('ParasitePDO\exceptions\ConstraintViolationException');
-        $this->expectExceptionMessage($statement);
+        $this->expectExceptionMessage($formattedExceptionMessage);
         
         $SUT->run();
     }
@@ -128,10 +187,13 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         );
         $statement = uniqid();
         
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
         
         try {
             $SUT->run();
@@ -158,13 +220,15 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         );
         $statement = uniqid();
         
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
         
         $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
-        $this->expectExceptionMessage($statement);
         
         $SUT->run();
     }
@@ -184,10 +248,13 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         );
         $statement = uniqid();
         
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
         
         try {
             $SUT->run();
@@ -201,87 +268,6 @@ class RethrowConstraintViolationExceptionTest extends TestCase
                 $e
             );
         }
-    }
-    
-    public function providerSetBoundInputParamsAndArg()
-    {
-        return [
-            [true,null],
-            [true,[]],
-            [true,''],
-            [false,null],
-        ];
-    }
-    
-    /**
-     * @dataProvider providerSetBoundInputParamsAndArg
-     * 
-     * @group run()
-     * @group setBoundInputParams()
-     * 
-     * @testdox run() adds "No params were bound" to the ConstraintViolationException's message if the exception is thrown and setBoundInputParams() is either not set or it's arg is empty
-     */
-    
-    public function testNoBoundParamsStatesAsSuch(
-        $setBoundInputParams,
-        $boundInputParams
-    )
-    {
-        $PDOException = new \PDOException(
-            "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '1' for key 'PRIMARY'",
-            23000,
-            null
-        );
-        $statement = uniqid();
-        
-        $SUT = $this->returnSubjectUnderTest();
-        
-        $SUT->setPDOException($PDOException);
-        $SUT->setStatement($statement);
-        if ($setBoundInputParams) {
-            $SUT->setBoundInputParams($boundInputParams);
-        }
-        
-        $expectedExceptionMessage = "$statement\n\nNo params were bound.";
-        
-        $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
-        $this->expectExceptionMessage($expectedExceptionMessage);
-        
-        $SUT->run();
-    }
-    
-    /**
-     * @group run()
-     * @group setBoundInputParams()
-     * 
-     * @testdox run() adds key value pairs from setBoundInputParams()'s arg to ConstraintViolationException's message if exception is thrown and arg is associative array
-     */
-    
-    public function testBoundParamsSetAddsThoseParamsToMessage()
-    {
-        $PDOException = new \PDOException(
-            "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '1' for key 'PRIMARY'",
-            23000,
-            null
-        );
-        $statement = uniqid();
-        $boundInputParams = [
-            $key1=uniqid()=>$value1=uniqid(),
-            $key2=uniqid()=>$value2=uniqid(),
-        ];
-        
-        $SUT = $this->returnSubjectUnderTest();
-        
-        $SUT->setPDOException($PDOException);
-        $SUT->setStatement($statement);
-        $SUT->setBoundInputParams($boundInputParams);
-        
-        $expectedExceptionMessage = "$statement\n\nBound with: '$key1'=>'$value1', '$key2'=>'$value2'";
-        
-        $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
-        $this->expectExceptionMessage($expectedExceptionMessage);
-        
-        $SUT->run();
     }
     
     private function returnSubjectUnderTest()
@@ -300,6 +286,16 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         if (!in_array('setStatement',$specified)) {
             $SUT->setStatement(uniqid());
         }
+        if (!in_array('setFormatExceptionMessage',$specified)) {
+            $SUT->setFormatExceptionMessage($this->returnFormatExceptionMessageMock());
+        }
+    }
+    
+    private function returnFormatExceptionMessageMock()
+    {
+        return $this->getMockBuilder(
+            'ParasitePDO\formatters\IFormatExceptionMessage'
+        )->getMock();
     }
 }
 

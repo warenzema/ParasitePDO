@@ -2,6 +2,7 @@
 namespace ParasitePDO\parasites;
 
 use ParasitePDO\exceptions\SetterRequiredException;
+use ParasitePDO\formatters\IFormatExceptionMessage;
 
 class RethrowConstraintViolationException implements IRethrowException
 {
@@ -33,6 +34,9 @@ class RethrowConstraintViolationException implements IRethrowException
         if (null === $this->statement) {
             throw new SetterRequiredException();
         }
+        if (null === $this->FormatExceptionMessage) {
+            throw new SetterRequiredException();
+        }
         
         $message = $this->PDOException->getMessage();
         $code = $this->PDOException->getCode();
@@ -46,30 +50,30 @@ class RethrowConstraintViolationException implements IRethrowException
             if ($isMySQLDuplicateKeyException) {
                 $rethrowExceptionClassName = 'ParasitePDO\exceptions\DuplicateKeyException';
             }
+            
+            $FormatExceptionMessage = clone $this->FormatExceptionMessage;
+            $FormatExceptionMessage->setPreviousExceptionMessage($message);
+            $FormatExceptionMessage->setQueryString($this->statement);
+            if (null !== $this->boundInputParams) {
+                $FormatExceptionMessage
+                    ->setBoundInputParams($this->boundInputParams);
+            }
+            $FormatExceptionMessage->run();
+            
             throw new $rethrowExceptionClassName(
-                $this->statement.$this->returnStringifiedBoundParams(),
+                $FormatExceptionMessage->getFormattedExceptionMessage(),
                 $code,
                 $this->PDOException
             );
         }
     }
     
-    private function returnStringifiedBoundParams()
+    private $FormatExceptionMessage;
+    public function setFormatExceptionMessage(
+        IFormatExceptionMessage $FormatExceptionMessage
+    )
     {
-        if (!is_array($this->boundInputParams)
-            || empty($this->boundInputParams)
-        ) {
-            return "\n\nNo params were bound.";
-        }
-        
-        $string = "\n\nBound with: ";
-        $stringifiedParams = [];
-        foreach ($this->boundInputParams as $key => $value) {
-            $stringifiedParams[] = "'$key'=>'$value'";
-        }
-        $string .= implode(', ',$stringifiedParams);
-        
-        return $string;
+        $this->FormatExceptionMessage = $FormatExceptionMessage;
     }
 }
 

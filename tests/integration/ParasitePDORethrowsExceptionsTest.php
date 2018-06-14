@@ -4,10 +4,10 @@ require_once __DIR__.'/../TestHelpers.php';
 
 use PHPUnit\Framework\TestCase;
 use ParasitePDO\hosts\ParasitePDO;
-use ParasitePDO\parasites\RethrowConstraintViolationException;
 use ParasitePDO\exceptions\DuplicateKeyException;
-use ParasitePDO\parasites\RethrowExceptionWithQueryInfo;
 use ParasitePDO\hosts\ParasitePDOException;
+use ParasitePDO\parasites\RethrowConstraintViolationExceptionFactory;
+use ParasitePDO\parasites\RethrowExceptionWithQueryInfoFactory;
 
 class ParasitePDORethrowsExceptionsTest extends TestCase
 {
@@ -40,7 +40,10 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         $ParasitePDO = new ParasitePDO($PDO);
         $query = "INSERT INTO $tablename (`id`) VALUES (1), (1)";
         if ($addRethrowConstraintViolationException) {
-            $ParasitePDO->addRethrowException(new RethrowConstraintViolationException());
+            $ParasitePDO->addRethrowException(
+                (new RethrowConstraintViolationExceptionFactory())
+                ->build()
+            );
         }
         $exceptionCaught = false;
         $isDuplicateKeyException = null;
@@ -84,7 +87,10 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         $query = "INSERT INTO $tablename (`id`) VALUES (1), (1)";
         
         if ($addRethrowConstraintViolationException) {
-            $ParasitePDO->addRethrowException(new RethrowConstraintViolationException());
+            $ParasitePDO->addRethrowException(
+                (new RethrowConstraintViolationExceptionFactory())
+                ->build()
+            );
         }
         $exceptionCaught = false;
         $isDuplicateKeyException = null;
@@ -121,7 +127,10 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
         
         $ParasitePDO = new ParasitePDO($PDO);
-        $ParasitePDO->addRethrowException(new RethrowConstraintViolationException());
+        $ParasitePDO->addRethrowException(
+            (new RethrowConstraintViolationExceptionFactory())
+            ->build()
+        );
         $query = "INSERT INTO $tablename (`id`) VALUES (1), (1), (:key3), (:key4)";
         $Statement = $ParasitePDO->prepare($query);
         
@@ -161,7 +170,10 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         $ParasitePDO = new ParasitePDO($PDO);
         $query = "INSERT INTO $tablename (`no_such_column`) VALUES (1)";
         if ($addRethrowWithQueryInfo) {
-            $ParasitePDO->addRethrowException(new RethrowExceptionWithQueryInfo());
+            $ParasitePDO->addRethrowException(
+                (new RethrowExceptionWithQueryInfoFactory())
+                ->build()
+            );
         }
         $exceptionCaught = false;
         $isParasitePDOException = null;
@@ -206,7 +218,10 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         $ParasitePDO = new ParasitePDO($PDO);
         $query = "INSERT INTO $tablename (`no_such_column`) VALUES (1)";
         if ($addRethrowWithQueryInfo) {
-            $ParasitePDO->addRethrowException(new RethrowExceptionWithQueryInfo());
+            $ParasitePDO->addRethrowException(
+                (new RethrowExceptionWithQueryInfoFactory())
+                ->build()
+            );
         }
         $exceptionCaught = false;
         $isParasitePDOException = null;

@@ -214,7 +214,7 @@ class FormatExceptionMessageWithMaximumInfoTest extends TestCase
             $SUT->setPreviousExceptionMessage(uniqid());
         }
         if (!in_array('setQueryString',$specified)) {
-            $SUT->setPreviousExceptionMessage(uniqid());
+            $SUT->setQueryString(uniqid());
         }
     }
 }

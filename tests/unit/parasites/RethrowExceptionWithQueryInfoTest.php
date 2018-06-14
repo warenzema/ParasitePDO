@@ -1,9 +1,12 @@
 <?php
+require_once __DIR__.'/../../TestHelpers.php';
+
 use PHPUnit\Framework\TestCase;
 use ParasitePDO\parasites\RethrowExceptionWithQueryInfo;
 
 class RethrowExceptionWithQueryInfoTest extends TestCase
 {
+    use \TestHelpers;
      /**
      * @group setPDOException()
      * @group run()
@@ -47,6 +50,27 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
     }
     
     /**
+     * @group setFormatExceptionMessage()
+     * @group run()
+     * 
+     * @testdox run() throws SetterRequiredException if not setFormatExceptionMessage()
+     */
+    
+    public function testRunThrowsSetterRequiredIfNotSetFormatMessage()
+    {
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $this->setRequiredSettersExceptAsSpecified(
+            $SUT,
+            ['setFormatExceptionMessage']
+        );
+        
+        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        
+        $SUT->run();
+    }
+    
+    /**
      * @group run()
      * 
      * @testdox run() throws ParasitePDOException for all exceptions, regardless of code or message
@@ -61,10 +85,13 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
         );
         $statement = uniqid();
         
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
         
         $this->expectException('ParasitePDO\hosts\ParasitePDOException');
         
@@ -74,33 +101,7 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
     /**
      * @group run()
      * 
-     * @testdox run() adds the setStatement()'s arg to the ConstraintViolationException's message if the exception is thrown
-     */
-    
-    public function testIfExceptionThrownThenMessageIsStatement()
-    {
-        $PDOException = new \PDOException(
-            uniqid(),
-            mt_rand(1,100000),
-            null
-        );
-        $statement = uniqid();
-        
-        $SUT = $this->returnSubjectUnderTest();
-        
-        $SUT->setPDOException($PDOException);
-        $SUT->setStatement($statement);
-        
-        $this->expectException('ParasitePDO\hosts\ParasitePDOException');
-        $this->expectExceptionMessage($statement);
-        
-        $SUT->run();
-    }
-    
-    /**
-     * @group run()
-     * 
-     * @testdox run() sets the setPDOException()'s arg to the ConstraintViolationException's previous exception if the exception is thrown
+     * @testdox run() sets the setPDOException()'s arg to the ParasitePDOException's previous exception if the exception is thrown
      */
     
     public function testRunSetsPrevExceptionAsSetPDOException()
@@ -112,10 +113,13 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
         );
         $statement = uniqid();
         
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
         
         try {
             $SUT->run();
@@ -127,83 +131,60 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
         }
     }
     
-    public function providerSetBoundInputParamsAndArg()
-    {
-        return [
-            [true,null],
-            [true,[]],
-            [true,''],
-            [false,null],
-        ];
-    }
-    
     /**
-     * @dataProvider providerSetBoundInputParamsAndArg
+     * @dataProvider providerTrueFalse1
      * 
      * @group run()
-     * @group setBoundInputParams()
      * 
-     * @testdox run() adds "No params were bound" to the ParasitePDOException's message if setBoundInputParams() is either not set or it's arg is empty
+     * @testdox run() formats an exception message using the previous exception message and the query string if the exception is thrown; Also the boundInputParams are passed, if set
      */
     
-    public function testNoBoundParamsStatesAsSuch(
-        $setBoundInputParams,
-        $boundInputParams
+    public function testIfExceptionThrownThenMessageIsFormatted(
+        $setBoundInputParams
     )
     {
         $PDOException = new \PDOException(
-            uniqid(),
-            23000,
+           $previousExceptionMessage = uniqid(),
+            mt_rand(1,100000),
             null
         );
         $statement = uniqid();
+        $boundInputParams = [uniqid()=>uniqid()];
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('setPreviousExceptionMessage')
+            ->with($this->equalTo($previousExceptionMessage));
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('setQueryString')
+            ->with($this->equalTo($statement));
+        if ($setBoundInputParams) {
+            $FormatExceptionMessage
+                ->expects($this->once())
+                ->method('setBoundInputParams')
+                ->with($this->equalTo($boundInputParams));
+        }
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('run');
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue($formattedExceptionMessage=uniqid()));
         
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
         if ($setBoundInputParams) {
             $SUT->setBoundInputParams($boundInputParams);
         }
         
-        $expectedExceptionMessage = "$statement\n\nNo params were bound.";
-        
         $this->expectException('ParasitePDO\hosts\ParasitePDOException');
-        $this->expectExceptionMessage($expectedExceptionMessage);
-        
-        $SUT->run();
-    }
-    
-    /**
-     * @group run()
-     * @group setBoundInputParams()
-     * 
-     * @testdox run() adds key value pairs from setBoundInputParams()'s arg to ParasitePDOException's message if arg is associative array
-     */
-    
-    public function testBoundParamsSetAddsThoseParamsToMessage()
-    {
-        $PDOException = new \PDOException(
-            uniqid(),
-            23000,
-            null
-        );
-        $statement = uniqid();
-        $boundInputParams = [
-            $key1=uniqid()=>$value1=uniqid(),
-            $key2=uniqid()=>$value2=uniqid(),
-        ];
-        
-        $SUT = $this->returnSubjectUnderTest();
-        
-        $SUT->setPDOException($PDOException);
-        $SUT->setStatement($statement);
-        $SUT->setBoundInputParams($boundInputParams);
-        
-        $expectedExceptionMessage = "$statement\n\nBound with: '$key1'=>'$value1', '$key2'=>'$value2'";
-        
-        $this->expectException('ParasitePDO\hosts\ParasitePDOException');
-        $this->expectExceptionMessage($expectedExceptionMessage);
+        $this->expectExceptionMessage($formattedExceptionMessage);
         
         $SUT->run();
     }
@@ -224,6 +205,16 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
         if (!in_array('setStatement',$specified)) {
             $SUT->setStatement(uniqid());
         }
+        if (!in_array('setFormatExceptionMessage',$specified)) {
+            $SUT->setFormatExceptionMessage($this->returnFormatExceptionMessageMock());
+        }
+    }
+    
+    private function returnFormatExceptionMessageMock()
+    {
+        return $this->getMockBuilder(
+            'ParasitePDO\formatters\IFormatExceptionMessage'
+        )->getMock();
     }
 }
 

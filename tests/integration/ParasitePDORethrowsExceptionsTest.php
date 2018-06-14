@@ -16,29 +16,35 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     private $username = 'dbuser';
     private $password = '123';
     private $dbname = 'parasitepdotest';
+    private $tablename = 'parasite_pdo_test_table';
+    
+    protected function setUp()
+    {
+        parent::setUp();
+        
+        $this->setupDatabaseAndTable();
+    }
     
     /**
-     * @dataProvider providerTrueFalse1
+     * @dataProvider providerTrueFalse2
      * 
      * @testdox if RethrowConstraintVioldationException is added to ParasitePDO, then DuplicateKeyException is thrown when using ParasitePDO::exec() with a statement that causes duplicate key exception; else the normal PDOException is thrown if no rethrows are added
      */
     
     public function testDuplicateKeyThrownForExec(
+        $injectPDOInsteadOfConstruct,
         $addRethrowConstraintViolationException
     )
     {
-        $tablename = 'parasite_pdo_test_table';
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        $ParasitePDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $ParasitePDO->query("USE $this->dbname")->execute();
         
-        $PDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        
-        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
-        $PDO->query("USE $this->dbname")->execute();
-        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
-        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
-        
-        $ParasitePDO = new ParasitePDO($PDO);
-        $query = "INSERT INTO $tablename (`id`) VALUES (1), (1)";
+        $query = "INSERT INTO $this->tablename (`id`) VALUES (1), (1)";
         if ($addRethrowConstraintViolationException) {
             $ParasitePDO->addRethrowException(
                 (new RethrowConstraintViolationExceptionFactory())
@@ -64,27 +70,25 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     }
     
     /**
-     * @dataProvider providerTrueFalse1
+     * @dataProvider providerTrueFalse2
      * 
      * @testdox if RethrowConstraintVioldationException is added to ParasitePDO, then DuplicateKeyException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute() with a statement that causes duplicate key exception; else the normal PDOException is thrown is no rethrows are added
      */
     
     public function testDuplicateKeyThrownForPrepare(
+        $injectPDOInsteadOfConstruct,
         $addRethrowConstraintViolationException
     )
     {
-        $tablename = 'parasite_pdo_test_table';
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        $ParasitePDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $ParasitePDO->query("USE $this->dbname")->execute();
         
-        $PDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        
-        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
-        $PDO->query("USE $this->dbname")->execute();
-        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
-        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
-        
-        $ParasitePDO = new ParasitePDO($PDO);
-        $query = "INSERT INTO $tablename (`id`) VALUES (1), (1)";
+        $query = "INSERT INTO $this->tablename (`id`) VALUES (1), (1)";
         
         if ($addRethrowConstraintViolationException) {
             $ParasitePDO->addRethrowException(
@@ -111,27 +115,28 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     }
     
     /**
+     * @dataProvider providerTrueFalse1
+     * 
      * @testdox DuplicateKeyException includes bound params if present
      */
     
-    public function testDupKeyAddsBoundParams()
+    public function testDupKeyAddsBoundParams(
+        $injectPDOInsteadOfConstruct
+    )
     {
-        $tablename = 'parasite_pdo_test_table';
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        $ParasitePDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $ParasitePDO->query("USE $this->dbname")->execute();
         
-        $PDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        
-        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
-        $PDO->query("USE $this->dbname")->execute();
-        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
-        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
-        
-        $ParasitePDO = new ParasitePDO($PDO);
         $ParasitePDO->addRethrowException(
             (new RethrowConstraintViolationExceptionFactory())
             ->build()
         );
-        $query = "INSERT INTO $tablename (`id`) VALUES (1), (1), (:key3), (:key4)";
+        $query = "INSERT INTO $this->tablename (`id`) VALUES (1), (1), (:key3), (:key4)";
         $Statement = $ParasitePDO->prepare($query);
         
         $expectedExceptionMessage = "$query\n\nBound with: 'key3'=>'value3', 'key4'=>'value4'";
@@ -148,27 +153,25 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     }
     
     /**
-     * @dataProvider providerTrueFalse1
+     * @dataProvider providerTrueFalse2
      * 
      * @testdox if RethrowExceptionWithQueryInfo is added to ParasitePDO, then ParasitePDOException is thrown when using ParasitePDO::query() with a statement that causes exception; else the normal PDOException is thrown if no rethrows are added
      */
     
     public function testRethrowWithQueryInfoWorksWithQuery(
+        $injectPDOInsteadOfConstruct,
         $addRethrowWithQueryInfo
     )
     {
-        $tablename = 'parasite_pdo_test_table';
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        $ParasitePDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $ParasitePDO->query("USE $this->dbname")->execute();
         
-        $PDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        
-        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
-        $PDO->query("USE $this->dbname")->execute();
-        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
-        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
-        
-        $ParasitePDO = new ParasitePDO($PDO);
-        $query = "INSERT INTO $tablename (`no_such_column`) VALUES (1)";
+        $query = "INSERT INTO $this->tablename (`no_such_column`) VALUES (1)";
         if ($addRethrowWithQueryInfo) {
             $ParasitePDO->addRethrowException(
                 (new RethrowExceptionWithQueryInfoFactory())
@@ -196,27 +199,25 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     }
     
     /**
-     * @dataProvider providerTrueFalse1
+     * @dataProvider providerTrueFalse2
      * 
      * @testdox if RethrowExceptionWithQueryInfo is added to ParasitePDO, then ParasitePDOException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute(); else the normal PDOException is thrown if no rethrows are added
      */
     
     public function testRethrowWithQueryInfoWorksWithPrepare(
+        $injectPDOInsteadOfConstruct,
         $addRethrowWithQueryInfo
     )
     {
-        $tablename = 'parasite_pdo_test_table';
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        if ($injectPDOInsteadOfConstruct) {
+            $ParasitePDO = $this->returnInjectedParasitePDO();
+        } else {
+            $ParasitePDO = $this->returnConstructedParasitePDO();
+        }
+        $ParasitePDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $ParasitePDO->query("USE $this->dbname")->execute();
         
-        $PDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        
-        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
-        $PDO->query("USE $this->dbname")->execute();
-        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
-        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
-        
-        $ParasitePDO = new ParasitePDO($PDO);
-        $query = "INSERT INTO $tablename (`no_such_column`) VALUES (1)";
+        $query = "INSERT INTO $this->tablename (`no_such_column`) VALUES (1)";
         if ($addRethrowWithQueryInfo) {
             $ParasitePDO->addRethrowException(
                 (new RethrowExceptionWithQueryInfoFactory())
@@ -241,6 +242,30 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
             $isParasitePDOException,
             $e
         );
+    }
+    
+    private function returnInjectedParasitePDO()
+    {
+        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        
+        return new ParasitePDO($PDO);
+    }
+    
+    private function returnConstructedParasitePDO()
+    {
+        return new ParasitePDO($this->dsn,$this->username,$this->password);
+    }
+    
+    private function setupDatabaseAndTable()
+    {
+        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        
+        $PDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        
+        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
+        $PDO->query("USE $this->dbname")->execute();
+        $PDO->query("DROP TABLE IF EXISTS $this->tablename")->execute();
+        $PDO->query("CREATE TABLE $this->tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
     }
 }
 

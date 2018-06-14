@@ -36,7 +36,7 @@ class RethrowExceptionWithQueryInfo implements IRethrowException
         $code = $this->PDOException->getCode();
         throw new ParasitePDOException(
             $this->statement.$this->returnStringifiedBoundParams(),
-            $code,
+            (int)$code,
             $this->PDOException
         );
     }

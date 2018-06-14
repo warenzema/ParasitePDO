@@ -15,7 +15,7 @@ class ParasitePDOStatement extends \PDOStatement
         $args = func_get_args();
         try {
             return parent::execute(...$args);
-        } catch (\Exception $e) {
+        } catch (\PDOException $e) {
             foreach ($this->RethrowExceptions as $RethrowException) {
                 $RethrowException->setPDOException($e);
                 $RethrowException->setStatement($this->queryString);

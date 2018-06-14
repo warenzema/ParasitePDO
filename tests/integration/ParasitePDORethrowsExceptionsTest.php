@@ -6,6 +6,8 @@ use PHPUnit\Framework\TestCase;
 use ParasitePDO\hosts\ParasitePDO;
 use ParasitePDO\parasites\RethrowConstraintViolationException;
 use ParasitePDO\exceptions\DuplicateKeyException;
+use ParasitePDO\parasites\RethrowExceptionWithQueryInfo;
+use ParasitePDO\hosts\ParasitePDOException;
 
 class ParasitePDORethrowsExceptionsTest extends TestCase
 {
@@ -133,6 +135,96 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
                 'key3'=>'value3',
                 'key4'=>'value4',
             ]
+        );
+    }
+    
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @testdox ParasitePDOException is thrown when using ParasitePDO::exec() with a statement that causes duplicate key exception, but only if RethrowConstraintVioldationException is added to ParasitePDO; else the normal PDOException is thrown
+     */
+    
+    public function testRethrowWithQueryInfoWorksWithQuery(
+        $addRethrowWithQueryInfo
+    )
+    {
+        $tablename = 'parasite_pdo_test_table';
+        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        
+        $PDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        
+        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
+        $PDO->query("USE $this->dbname")->execute();
+        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
+        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
+        
+        $ParasitePDO = new ParasitePDO($PDO);
+        $query = "INSERT INTO $tablename (`no_such_column`) VALUES (1)";
+        if ($addRethrowWithQueryInfo) {
+            $ParasitePDO->addRethrowException(new RethrowExceptionWithQueryInfo());
+        }
+        $exceptionCaught = false;
+        $isParasitePDOException = null;
+        $e = null;
+        try {
+            $ParasitePDO->query($query);
+        } catch (\Exception $e) {
+            $exceptionCaught = true;
+            $isParasitePDOException = $e instanceof ParasitePDOException;
+            $this->assertInstanceOf('PDOException', $e);
+        }
+        
+        $this->assertTrue($exceptionCaught);
+        
+        $this->assertSame(
+            $addRethrowWithQueryInfo,
+            $isParasitePDOException,
+            $e
+        );
+    }
+    
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @testdox ParasitePDOException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute(), but only if RethrowConstraintVioldationException is added to ParasitePDO; else the normal PDOException is thrown
+     */
+    
+    public function testRethrowWithQueryInfoWorksWithPrepare(
+        $addRethrowWithQueryInfo
+    )
+    {
+        $tablename = 'parasite_pdo_test_table';
+        $PDO = new \PDO($this->dsn,$this->username,$this->password);
+        
+        $PDO->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        
+        $PDO->query("CREATE DATABASE IF NOT EXISTS $this->dbname")->execute();
+        $PDO->query("USE $this->dbname")->execute();
+        $PDO->query("DROP TABLE IF EXISTS $tablename")->execute();
+        $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
+        
+        $ParasitePDO = new ParasitePDO($PDO);
+        $query = "INSERT INTO $tablename (`no_such_column`) VALUES (1)";
+        if ($addRethrowWithQueryInfo) {
+            $ParasitePDO->addRethrowException(new RethrowExceptionWithQueryInfo());
+        }
+        $exceptionCaught = false;
+        $isParasitePDOException = null;
+        $e = null;
+        try {
+            $Statement = $ParasitePDO->prepare($query);
+            $Statement->execute();
+        } catch (\Exception $e) {
+            $exceptionCaught = true;
+            $isParasitePDOException = $e instanceof ParasitePDOException;
+        }
+        
+        $this->assertTrue($exceptionCaught);
+        
+        $this->assertSame(
+            $addRethrowWithQueryInfo,
+            $isParasitePDOException,
+            $e
         );
     }
 }

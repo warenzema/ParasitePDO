@@ -1,7 +1,6 @@
 <?php
 namespace ParasitePDO\hosts;
 
-use ParasitePDO\parasites\RethrowConstraintViolationException;
 use ParasitePDO\parasites\IRethrowException;
 
 class ParasitePDO extends \PDO
@@ -98,9 +97,7 @@ class ParasitePDO extends \PDO
             \PDO::ATTR_STATEMENT_CLASS,
             [
                 'ParasitePDO\hosts\ParasitePDOStatement',
-                [
-                    $this->RethrowExceptions
-                ]
+                [$this->RethrowExceptions]
             ]
         );
         return call_user_func_array(
@@ -113,14 +110,25 @@ class ParasitePDO extends \PDO
     {
         $this->instance->setAttribute(
             \PDO::ATTR_STATEMENT_CLASS,
-            ['ParasitePDO\hosts\ParasitePDOStatement',[[new RethrowConstraintViolationException()]]]
+            [
+                'ParasitePDO\hosts\ParasitePDOStatement',
+                [$this->RethrowExceptions]
+            ]
         );
-        //TODO needs to be updated to follow what prepare() does
-        //currently lacking covering test
-        return call_user_func_array(
-            [$this->instance,__FUNCTION__],
-            func_get_args()
-        );
+        try {
+            return call_user_func_array(
+                [$this->instance,__FUNCTION__],
+                func_get_args()
+            );
+        } catch (\PDOException $e) {
+            $statement = func_get_arg(0);
+            foreach ($this->RethrowExceptions as $RethrowException) {
+                $RethrowException->setPDOException($e);
+                $RethrowException->setStatement($statement);
+                $RethrowException->run();
+            }
+            throw $e;
+        }
     }
     
     public function rollBack()

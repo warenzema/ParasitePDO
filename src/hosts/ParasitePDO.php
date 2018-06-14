@@ -58,12 +58,10 @@ class ParasitePDO extends \PDO
                 func_get_args()
             );
         } catch (\PDOException $e) {
-            foreach ($this->RethrowExceptions as $RethrowException) {
-                $RethrowException->setPDOException($e);
-                $RethrowException->setStatement($statement);
-                $RethrowException->run();
-            }
-            throw $e;
+            $this->rethrowCaughtException(
+                $e,
+                $statement
+            );
         }
     }
     
@@ -122,13 +120,24 @@ class ParasitePDO extends \PDO
             );
         } catch (\PDOException $e) {
             $statement = func_get_arg(0);
-            foreach ($this->RethrowExceptions as $RethrowException) {
-                $RethrowException->setPDOException($e);
-                $RethrowException->setStatement($statement);
-                $RethrowException->run();
-            }
-            throw $e;
+            $this->rethrowCaughtException(
+                $e,
+                $statement
+            );
         }
+    }
+    
+    private function rethrowCaughtException(
+        \PDOException $PDOException,
+        $statement
+    )
+    {
+        foreach ($this->RethrowExceptions as $RethrowException) {
+            $RethrowException->setPDOException($PDOException);
+            $RethrowException->setStatement($statement);
+            $RethrowException->run();
+        }
+        throw $PDOException;
     }
     
     public function rollBack()

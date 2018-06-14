@@ -20,7 +20,7 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     /**
      * @dataProvider providerTrueFalse1
      * 
-     * @testdox DuplicateKeyException is thrown when using ParasitePDO::exec() with a statement that causes duplicate key exception, but only if RethrowConstraintVioldationException is added to ParasitePDO; else the normal PDOException is thrown
+     * @testdox if RethrowConstraintVioldationException is added to ParasitePDO, then DuplicateKeyException is thrown when using ParasitePDO::exec() with a statement that causes duplicate key exception; else the normal PDOException is thrown if no rethrows are added
      */
     
     public function testDuplicateKeyThrownForExec(
@@ -63,7 +63,7 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     /**
      * @dataProvider providerTrueFalse1
      * 
-     * @testdox DuplicateKeyException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute() with a statement that causes duplicate key exception, but only if RethrowConstraintVioldationException is added to ParasitePDO; else the normal PDOException is thrown
+     * @testdox if RethrowConstraintVioldationException is added to ParasitePDO, then DuplicateKeyException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute() with a statement that causes duplicate key exception; else the normal PDOException is thrown is no rethrows are added
      */
     
     public function testDuplicateKeyThrownForPrepare(
@@ -141,7 +141,7 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     /**
      * @dataProvider providerTrueFalse1
      * 
-     * @testdox ParasitePDOException is thrown when using ParasitePDO::exec() with a statement that causes duplicate key exception, but only if RethrowConstraintVioldationException is added to ParasitePDO; else the normal PDOException is thrown
+     * @testdox if RethrowExceptionWithQueryInfo is added to ParasitePDO, then ParasitePDOException is thrown when using ParasitePDO::query() with a statement that causes exception; else the normal PDOException is thrown if no rethrows are added
      */
     
     public function testRethrowWithQueryInfoWorksWithQuery(
@@ -186,7 +186,7 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     /**
      * @dataProvider providerTrueFalse1
      * 
-     * @testdox ParasitePDOException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute(), but only if RethrowConstraintVioldationException is added to ParasitePDO; else the normal PDOException is thrown
+     * @testdox if RethrowExceptionWithQueryInfo is added to ParasitePDO, then ParasitePDOException is thrown when using ParasitePDO::prepare() and then ParasitePDOStatement::execute(); else the normal PDOException is thrown if no rethrows are added
      */
     
     public function testRethrowWithQueryInfoWorksWithPrepare(

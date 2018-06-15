@@ -22,7 +22,7 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     {
         parent::setUp();
         
-        //$this->setupDatabaseAndTable();
+        $this->setupDatabaseAndTable();
     }
     
     /**
@@ -289,7 +289,7 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         
         $phpunit = "php ../vendor/bin/phpunit";
         
-        $command = "$phpunit --filter testDeadlock1 integration/ParasitePDORethrowsExceptionsTest > /dev/null 2>&1 &";
+        $command = "$phpunit --filter testDeadlock1 integration/RaceSupportTest > /dev/null 2>&1 &";
         try {
             //need to not wait
             $ParasitePDO1->beginTransaction();
@@ -310,25 +310,6 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
             $isParasitePDOException,
             $e
         );
-    }
-    
-    public function testDeadlock1()
-    {
-        $ParasitePDO2 = $this->returnInjectedParasitePDO();
-        
-        $ParasitePDO2->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        $ParasitePDO2->query("USE $this->dbname")->execute();
-        
-        $ParasitePDO2->query("INSERT INTO $this->tablename (`id`) VALUES (4)");
-        
-        $selectForUpdate1 = "SELECT id FROM $this->tablename WHERE id=1 FOR UPDATE";
-        $selectForUpdate2 = "SELECT id FROM $this->tablename WHERE id=2 FOR UPDATE";
-        
-        $ParasitePDO2->beginTransaction();
-        $ParasitePDO2->query($selectForUpdate2);
-        $ParasitePDO2->query($selectForUpdate1);
-        sleep(5);
-        $ParasitePDO2->commit();
     }
     
     /**

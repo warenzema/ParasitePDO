@@ -4,6 +4,7 @@ namespace ParasitePDO\parasites;
 use ParasitePDO\exceptions\SetterRequiredException;
 use ParasitePDO\hosts\ParasitePDOException;
 use ParasitePDO\formatters\IFormatExceptionMessage;
+use ParasitePDO\hosts\ParasitePDO;
 
 class RethrowExceptionWithQueryInfo implements IRethrowException
 {
@@ -24,6 +25,8 @@ class RethrowExceptionWithQueryInfo implements IRethrowException
     {
         $this->boundInputParams = $boundInputParams;
     }
+    
+    public function setParasitePDO(ParasitePDO $ParasitePDO){}
     
     public function run()
     {

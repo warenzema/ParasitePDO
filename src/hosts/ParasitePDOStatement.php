@@ -5,8 +5,10 @@ class ParasitePDOStatement extends \PDOStatement
 {
     
     private $RethrowExceptions = [];
-    protected function __construct($RethrowExceptions)
+    private $ParasitePDO;
+    protected function __construct($ParasitePDO,$RethrowExceptions)
     {
+        $this->ParasitePDO = $ParasitePDO;
         $this->RethrowExceptions = $RethrowExceptions;
     }
     
@@ -20,6 +22,7 @@ class ParasitePDOStatement extends \PDOStatement
                 $RethrowException->setPDOException($e);
                 $RethrowException->setStatement($this->queryString);
                 $RethrowException->setBoundInputParams($bound_input_params);
+                $RethrowException->setParasitePDO($this->ParasitePDO);
                 $RethrowException->run();
             }
             throw $e;

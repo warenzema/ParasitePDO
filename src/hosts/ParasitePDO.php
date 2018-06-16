@@ -91,13 +91,7 @@ class ParasitePDO extends \PDO
     
     public function prepare($statement, $options = NULL)
     {
-        $this->instance->setAttribute(
-            \PDO::ATTR_STATEMENT_CLASS,
-            [
-                'ParasitePDO\hosts\ParasitePDOStatement',
-                [$this->RethrowExceptions]
-            ]
-        );
+        $this->setStatementClass();
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
             func_get_args()
@@ -106,13 +100,7 @@ class ParasitePDO extends \PDO
     
     public function query()
     {
-        $this->instance->setAttribute(
-            \PDO::ATTR_STATEMENT_CLASS,
-            [
-                'ParasitePDO\hosts\ParasitePDOStatement',
-                [$this->RethrowExceptions]
-            ]
-        );
+        $this->setStatementClass();
         try {
             return call_user_func_array(
                 [$this->instance,__FUNCTION__],
@@ -127,6 +115,20 @@ class ParasitePDO extends \PDO
         }
     }
     
+    private function setStatementClass()
+    {
+        $this->instance->setAttribute(
+            \PDO::ATTR_STATEMENT_CLASS,
+            [
+                'ParasitePDO\hosts\ParasitePDOStatement',
+                [
+                    $this,
+                    $this->RethrowExceptions,
+                ]
+            ]
+        );
+    }
+    
     private function rethrowCaughtException(
         \PDOException $PDOException,
         $statement
@@ -135,6 +137,7 @@ class ParasitePDO extends \PDO
         foreach ($this->RethrowExceptions as $RethrowException) {
             $RethrowException->setPDOException($PDOException);
             $RethrowException->setStatement($statement);
+            $RethrowException->setParasitePDO($this);
             $RethrowException->run();
         }
         throw $PDOException;

@@ -72,6 +72,48 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $SUT->run();
     }
     
+    /**
+     * @group setErrorInfo()
+     * @group run()
+     * 
+     * @testdox run() throws SetterRequiredException if not setErrorInfo()
+     */
+    
+    public function testRunThrowsSetterRequiredIfNotSetErrorInfo()
+    {
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $this->setRequiredSettersExceptAsSpecified(
+            $SUT,
+            ['setErrorInfo']
+        );
+        
+        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        
+        $SUT->run();
+    }
+    
+    /**
+     * @group setDriverName()
+     * @group run()
+     * 
+     * @testdox run() throws SetterRequiredException if not setDriverName()
+     */
+    
+    public function testRunThrowsSetterRequiredIfNotSetDriverName()
+    {
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $this->setRequiredSettersExceptAsSpecified(
+            $SUT,
+            ['setDriverName']
+        );
+        
+        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        
+        $SUT->run();
+    }
+    
     public function provider23000To23999()
     {
         return [
@@ -103,11 +145,20 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
+        $errorInfo = [
+            $code,
+            1234,
+            uniqid()
+        ];
+        $driverName = uniqid();
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         $this->expectException('ParasitePDO\exceptions\ConstraintViolationException');
         
@@ -119,7 +170,7 @@ class RethrowConstraintViolationExceptionTest extends TestCase
      * 
      * @group run()
      * 
-     * @testdox run() formats an exception message using the previous exception message and the query string if the exception is thrown; Also the boundInputParams are passed, if set
+     * @testdox run() formats an exception message using the previous exception and the query string if the exception is thrown; Also the boundInputParams are passed, if set
      */
     
     public function testIfExceptionThrownThenMessageIsFormatted(
@@ -133,6 +184,13 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         );
         $statement = uniqid();
         $boundInputParams = [uniqid()=>uniqid()];
+        
+        $errorInfo = [
+            '23000',
+            9999,
+            uniqid()
+        ];
+        $driverName = uniqid();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         $FormatExceptionMessage
@@ -162,6 +220,8 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         if ($setBoundInputParams) {
             $SUT->setBoundInputParams($boundInputParams);
         }
@@ -175,7 +235,7 @@ class RethrowConstraintViolationExceptionTest extends TestCase
     /**
      * @group run()
      * 
-     * @testdox run() sets the setPDOException()'s arg to the ConstraintViolationException's previous exception if the exception is thrown
+     * @testdox run() sets PDOException to the ConstraintViolationException's previous exception if the exception is thrown
      */
     
     public function testConstraintViolationSetsPrevExceptionAsSetPDOException()
@@ -187,6 +247,13 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         );
         $statement = uniqid();
         
+        $errorInfo = [
+            '23000',
+            9999,
+            uniqid()
+        ];
+        $driverName = uniqid();
+        
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
         $SUT = $this->returnSubjectUnderTest();
@@ -194,6 +261,8 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         try {
             $SUT->run();
@@ -208,7 +277,7 @@ class RethrowConstraintViolationExceptionTest extends TestCase
     /**
      * @group run()
      * 
-     * @testdox run() throws DuplicateKeyException instead of ConstraintViolationException if the setPDOException()'s arg's message contains text indicating there is a duplicate entry, using MySQL's syntax
+     * @testdox run() throws DuplicateKeyException instead of ConstraintViolationException if the driverName == 'mysql' and errorInfo has the code 1062, which is MySQL's duplicate key error code
      */
     
     public function testIfPrevExceptionHasMysqlDupKeyThenThrowsDupKey()
@@ -220,6 +289,13 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         );
         $statement = uniqid();
         
+        $errorInfo = [
+            '23000',
+            1062,
+            "Duplicate entry '1' for key 'PRIMARY'"
+        ];
+        $driverName = 'mysql';
+        
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
         $SUT = $this->returnSubjectUnderTest();
@@ -227,6 +303,8 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
         
@@ -236,7 +314,7 @@ class RethrowConstraintViolationExceptionTest extends TestCase
     /**
      * @group run()
      * 
-     * @testdox run() sets the setPDOException()'s arg to the DuplicateKeyException previous exception if the exception is thrown
+     * @testdox run() sets PDOException to the DuplicateKeyException previous exception if the exception is thrown
      */
     
     public function testDupKeySetsPrevExceptionAsSetPDOException()
@@ -248,6 +326,13 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         );
         $statement = uniqid();
         
+        $errorInfo = [
+            '23000',
+            1062,
+            "Duplicate entry '1' for key 'PRIMARY'"
+        ];
+        $driverName = 'mysql';
+        
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
         $SUT = $this->returnSubjectUnderTest();
@@ -255,6 +340,8 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         try {
             $SUT->run();
@@ -270,25 +357,95 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         }
     }
     
+    /**
+     * @doesNotPerformAssertions
+     * 
+     * @group run()
+     * 
+     * @testdox run() does nothing if the exception code does not start with '23' and the errorInfo does not include error code 1062 for a duplicate key exception
+     */
+    
+    public function testDoesNothingIfExceptionIsNotConstraintViolation()
+    {
+        $PDOException = new \PDOException(
+            "PDOException: SQLSTATE[HY000]: ".uniqid(),
+            00000,
+            null
+        );
+        $statement = uniqid();
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $errorInfo = [
+            'HY000',
+            9999,
+            null
+        ];
+        $driverName = 'mysql';
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
+        
+        $SUT->run();
+    }
+    
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @group run()
+     * 
+     * @testdox run() throws ConstraintViolationException instead of DuplicateKeyException if the driverName != 'mysql', even if the errorInfo code is 1062
+     */
+    
+    public function testStaysWithConstraintExceptionIfDriverNotMysql(
+        $driverIsMysql
+    )
+    {
+        $PDOException = new \PDOException(
+            "PDOException: SQLSTATE[HY000]: ".uniqid(),
+            '23000',
+            null
+        );
+        $statement = uniqid();
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $errorInfo = [
+            '23000',
+            1062,
+            "Duplicate entry '1' for key 'PRIMARY'"
+        ];
+        if ($driverIsMysql) {
+            $driverName = 'mysql';
+        } else {
+            $driverName = uniqid();
+        }
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
+        
+        if ($driverIsMysql) {
+            $this->expectException('ParasitePDO\exceptions\DuplicateKeyException');
+        } else {
+            $this->expectException('ParasitePDO\exceptions\ConstraintViolationException');
+        }
+        
+        $SUT->run();
+    }
+    
     private function returnSubjectUnderTest()
     {
         return new RethrowConstraintViolationException();
-    }
-    
-    private function setRequiredSettersExceptAsSpecified(
-        $SUT,
-        array $specified
-    )
-    {
-        if (!in_array('setPDOException',$specified)) {
-            $SUT->setPDOException(new \PDOException());
-        }
-        if (!in_array('setStatement',$specified)) {
-            $SUT->setStatement(uniqid());
-        }
-        if (!in_array('setFormatExceptionMessage',$specified)) {
-            $SUT->setFormatExceptionMessage($this->returnFormatExceptionMessageMock());
-        }
     }
     
     private function returnFormatExceptionMessageMock()
@@ -296,6 +453,38 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         return $this->getMockBuilder(
             'ParasitePDO\formatters\IFormatExceptionMessage'
         )->getMock();
+    }
+    
+    
+    private function setRequiredSettersExceptAsSpecified(
+        $SUT,
+        array $specified
+    )
+    {
+        if (!in_array($method='setPDOException',$specified)) {
+            $SUT->$method(new \PDOException());
+        }
+        if (!in_array($method='setStatement',$specified)) {
+            $SUT->$method(uniqid());
+        }
+        if (!in_array($method='setFormatExceptionMessage',$specified)) {
+            $SUT->$method($this->returnFormatExceptionMessageMock());
+        }
+        if (!in_array($method='setErrorInfo',$specified)) {
+            $SUT->$method($this->returnErrorInfoNoErrorStub());
+        }
+        if (!in_array($method='setDriverName',$specified)) {
+            $SUT->$method(uniqid());
+        }
+    }
+    
+    private function returnErrorInfoNoErrorStub()
+    {
+        return [
+            '00000',
+            null,
+            null
+        ];
     }
 }
 

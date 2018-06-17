@@ -7,8 +7,6 @@ use ParasitePDO\hosts\ParasitePDO;
 
 class RethrowConstraintViolationException implements IRethrowException
 {
-    private $mysqlDuplicateKeyString = 'Integrity constraint violation: 1062 Duplicate entry';
-    
     private $PDOException;
     public function setPDOException(\PDOException $PDOException)
     {
@@ -29,9 +27,17 @@ class RethrowConstraintViolationException implements IRethrowException
     
     public function setParasitePDO(ParasitePDO $ParasitePDO){}
     
-    public function setErrorInfo(array $errorInfo){}
+    private $errorInfo;
+    public function setErrorInfo(array $errorInfo)
+    {
+        $this->errorInfo = $errorInfo;
+    }
     
-    public function setDriverName(string $driverName){}
+    private $driverName;
+    public function setDriverName(string $driverName)
+    {
+        $this->driverName = $driverName;
+    }
     
     public function run()
     {
@@ -44,20 +50,24 @@ class RethrowConstraintViolationException implements IRethrowException
         if (null === $this->FormatExceptionMessage) {
             throw new SetterRequiredException();
         }
+        if (null === $this->errorInfo) {
+            throw new SetterRequiredException();
+        }
+        if (null === $this->driverName) {
+            throw new SetterRequiredException();
+        }
         
         $message = $this->PDOException->getMessage();
         $code = $this->PDOException->getCode();
-        $rethrowExceptionClassName = 'ParasitePDO\exceptions\ConstraintViolationException';
-        if (is_numeric($code) && $code >= 23000 && $code < 24000) {
-            $isMySQLDuplicateKeyException
-                = false !== strpos(
-                    $message,
-                    $this->mysqlDuplicateKeyString
-                );
-            if ($isMySQLDuplicateKeyException) {
-                $rethrowExceptionClassName = 'ParasitePDO\exceptions\DuplicateKeyException';
-            }
-            
+        $rethrowExceptionClassName = false;
+        if (0 === strpos((string)$code, '23')) {
+            $rethrowExceptionClassName = 'ParasitePDO\exceptions\ConstraintViolationException';
+        }
+        if ('mysql' == $this->driverName && 1062 == $this->errorInfo[1]) {
+            $rethrowExceptionClassName = 'ParasitePDO\exceptions\DuplicateKeyException';
+        }
+        
+        if ($rethrowExceptionClassName) {
             $FormatExceptionMessage = clone $this->FormatExceptionMessage;
             $FormatExceptionMessage->setPreviousExceptionMessage($message);
             $FormatExceptionMessage->setQueryString($this->statement);

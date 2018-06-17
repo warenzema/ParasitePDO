@@ -92,11 +92,144 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
     }
     
     /**
+     * @group setErrorInfo()
+     * @group run()
+     * 
+     * @testdox run() throws SetterRequiredException if not setErrorInfo()
+     */
+    
+    public function testRunThrowsSetterRequiredIfNotSetErrorInfo()
+    {
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $this->setRequiredSettersExceptAsSpecified(
+            $SUT,
+            ['setErrorInfo']
+        );
+        
+        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        
+        $SUT->run();
+    }
+    
+    /**
+     * @group setDriverName()
+     * @group run()
+     * 
+     * @testdox run() throws SetterRequiredException if not setDriverName()
+     */
+    
+    public function testRunThrowsSetterRequiredIfNotSetDriverName()
+    {
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $this->setRequiredSettersExceptAsSpecified(
+            $SUT,
+            ['setDriverName']
+        );
+        
+        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        
+        $SUT->run();
+    }
+    
+    
+    /**
+     * @group run()
+     * 
+     * @testdox run() throws LockWaitTimeoutException if setErrorInfo()'s arg indicates a 1205 error code and setDriverName('mysql')
+     */
+    
+    public function testIfPrevExceptionHasMysqlLockWaitThenThrowsLockWait()
+    {
+        $PDOException = new \PDOException(
+            "PDOException: SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction",
+            00000,
+            null
+        );
+        $statement = uniqid();
+        $ParasitePDO = $this->returnParasitePDOStub();
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $errorInfo = [
+            'HY000',
+            1205,
+            'Lock wait timeout exceeded; try restarting transaction'
+        ];
+        $driverName = 'mysql';
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setParasitePDO($ParasitePDO);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
+        
+        $this->expectException('ParasitePDO\exceptions\LockWaitTimeoutException');
+        
+        $SUT->run();
+    }
+    
+    /**
+     * @group run()
+     * 
+     * @testdox run() sets the setPDOException()'s arg to the LockWaitTimeoutException's previous exception if the exception is thrown
+     */
+    
+    public function testLockWaitSetsPrevExceptionAsSetPDOException()
+    {
+        $PDOException = new \PDOException(
+            "PDOException: SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction",
+            00000,
+            null
+        );
+        $statement = uniqid();
+        $ParasitePDO = $this->returnParasitePDOStub();
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $errorInfo = [
+            'HY000',
+            1205,
+            'Lock wait timeout exceeded; try restarting transaction'
+        ];
+        $driverName = 'mysql';
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setParasitePDO($ParasitePDO);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
+        
+        $exceptionCaught = false;
+        try {
+            $SUT->run();
+        } catch (\Exception $e) {
+            $exceptionCaught = true;
+            $this->assertSame(
+                $PDOException,
+                $e->getPrevious()
+            );
+            $this->assertInstanceOf(
+                'ParasitePDO\exceptions\LockWaitTimeoutException',
+                $e
+            );
+        }
+        $this->assertTrue($exceptionCaught);
+    }
+    
+    /**
      * @dataProvider providerTrueFalse1
      * 
      * @group run()
      * 
-     * @testdox run() formats an exception message using the previous exception message and the query string if the exception is thrown; Also the boundInputParams are passed, if set; Also, the database is queried with `SHOW ENGINE INNODB STATUS` and `SHOW FULL PROCESSLIST`, and their respective outputs added as additional information
+     * @testdox run() formats an exception message using the previous exception message and the query string if the exception is thrown; Also the boundInputParams are passed, if set; Also, the database is queried with `SHOW ENGINE INNODB STATUS` and `SHOW FULL PROCESSLIST`, and their respective outputs added as additional information if setDriverName('mysql')
      */
     
     public function testIfExceptionThrownThenMessageIsFormatted(
@@ -144,19 +277,6 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
         $parasitePdoAt = 0;
         $ParasitePDO
             ->expects($this->at($parasitePdoAt++))
-            ->method('errorInfo')
-            ->will($this->returnValue([
-                'HY000',
-                1205,
-                'Lock wait timeout exceeded; try restarting transaction'
-            ]));
-        $ParasitePDO
-            ->expects($this->at($parasitePdoAt++))
-            ->method('getAttribute')
-            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
-            ->will($this->returnValue('mysql'));
-        $ParasitePDO
-            ->expects($this->at($parasitePdoAt++))
             ->method('query')
             ->with($this->equalTo('SHOW ENGINE INNODB STATUS'))
             ->will($this->returnValue($ParasitePDOStatement1));
@@ -197,12 +317,21 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
             ->method('getFormattedExceptionMessage')
             ->will($this->returnValue($formattedExceptionMessage=uniqid()));
         
+        $errorInfo = [
+            'HY000',
+            1205,
+            'Lock wait timeout exceeded; try restarting transaction'
+        ];
+        $driverName = 'mysql';
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setParasitePDO($ParasitePDO);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         if ($setBoundInputParams) {
             $SUT->setBoundInputParams($boundInputParams);
         }
@@ -214,107 +343,11 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
     }
     
     /**
+     * @doesNotPerformAssertions
+     * 
      * @group run()
      * 
-     * @testdox run() throws LockWaitTimeoutException if the setPDOException()'s arg's message contains text indicating there is a lock wait timeout, using MySQL's syntax
-     */
-    
-    public function testIfPrevExceptionHasMysqlLockWaitThenThrowsLockWait()
-    {
-        $PDOException = new \PDOException(
-            "PDOException: SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction",
-            00000,
-            null
-        );
-        $statement = uniqid();
-        $ParasitePDO = $this->returnParasitePDOStub();
-        $ParasitePDO
-            ->expects($this->once())
-            ->method('errorInfo')
-            ->will($this->returnValue([
-                'HY000',
-                1205,
-                'Lock wait timeout exceeded; try restarting transaction'
-            ]));
-        $ParasitePDO
-            ->expects($this->once())
-            ->method('getAttribute')
-            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
-            ->will($this->returnValue('mysql'));
-        
-        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
-        
-        $SUT = $this->returnSubjectUnderTest();
-        
-        $SUT->setPDOException($PDOException);
-        $SUT->setStatement($statement);
-        $SUT->setParasitePDO($ParasitePDO);
-        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
-        
-        $this->expectException('ParasitePDO\exceptions\LockWaitTimeoutException');
-        
-        $SUT->run();
-    }
-    
-    /**
-     * @group run()
-     * 
-     * @testdox run() sets the setPDOException()'s arg to the LockWaitTimeoutException's previous exception if the exception is thrown
-     */
-    
-    public function testLockWaitSetsPrevExceptionAsSetPDOException()
-    {
-        $PDOException = new \PDOException(
-            "PDOException: SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction",
-            00000,
-            null
-        );
-        $statement = uniqid();
-        $ParasitePDO = $this->returnParasitePDOStub();
-        $ParasitePDO
-            ->expects($this->once())
-            ->method('errorInfo')
-            ->will($this->returnValue([
-                'HY000',
-                1205,
-                'Lock wait timeout exceeded; try restarting transaction'
-            ]));
-        $ParasitePDO
-            ->expects($this->once())
-            ->method('getAttribute')
-            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
-            ->will($this->returnValue('mysql'));
-        
-        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
-        
-        $SUT = $this->returnSubjectUnderTest();
-        
-        $SUT->setPDOException($PDOException);
-        $SUT->setStatement($statement);
-        $SUT->setParasitePDO($ParasitePDO);
-        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
-        
-        $exceptionCaught = false;
-        try {
-            $SUT->run();
-        } catch (\Exception $e) {
-            $exceptionCaught = true;
-            $this->assertSame(
-                $PDOException,
-                $e->getPrevious()
-            );
-            $this->assertInstanceOf(
-                'ParasitePDO\exceptions\LockWaitTimeoutException',
-                $e
-            );
-        }
-        $this->assertTrue($exceptionCaught);
-    }
-    
-    /**
-     * @group run()
-     * 
-     * @testdox run() does nothing if setParasitePDO()'s arg::errorInfo() does not return error code 1205 for a lock wait timeout
+     * @testdox run() does nothing if setErrorInfo() arg does not include error code 1205 for a lock wait timeout
      */
     
     public function testDoesNothingIfExceptionIsNotLockWaitTimeout()
@@ -326,21 +359,15 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
         );
         $statement = uniqid();
         $ParasitePDO = $this->returnParasitePDOStub();
-        $ParasitePDO
-            ->expects($this->once())
-            ->method('errorInfo')
-            ->will($this->returnValue([
-                'HY000',
-                0001,
-                uniqid(),
-            ]));
-        $ParasitePDO
-            ->expects($this->once())
-            ->method('getAttribute')
-            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
-            ->will($this->returnValue('mysql'));
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $errorInfo = [
+            '00000',
+            null,
+            null
+        ];
+        $driverName = 'mysql';
         
         $SUT = $this->returnSubjectUnderTest();
         
@@ -348,14 +375,18 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
         $SUT->setStatement($statement);
         $SUT->setParasitePDO($ParasitePDO);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         $SUT->run();
     }
     
     /**
+     * @doesNotPerformAssertions
+     * 
      * @group run()
      * 
-     * @testdox run() does nothing if setParasitePDO()'s arg does not indicate that the driver is 'mysql'
+     * @testdox run() does nothing if setDriverName() arg is not 'mysql'
      */
     
     public function testDoesNothingIfDriverIsNotMysql()
@@ -367,21 +398,15 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
         );
         $statement = uniqid();
         $ParasitePDO = $this->returnParasitePDOStub();
-        $ParasitePDO
-            ->expects($this->once())
-            ->method('errorInfo')
-            ->will($this->returnValue([
-                'HY000',
-                1205,
-                uniqid(),
-            ]));
-        $ParasitePDO
-            ->expects($this->once())
-            ->method('getAttribute')
-            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
-            ->will($this->returnValue(uniqid()));
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $errorInfo = [
+            'HY000',
+            1205,
+            'Lock wait timeout exceeded; try restarting transaction'
+        ];
+        $driverName = uniqid();
         
         $SUT = $this->returnSubjectUnderTest();
         
@@ -389,6 +414,8 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
         $SUT->setStatement($statement);
         $SUT->setParasitePDO($ParasitePDO);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         $SUT->run();
     }
@@ -403,18 +430,33 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
         array $specified
     )
     {
-        if (!in_array('setPDOException',$specified)) {
-            $SUT->setPDOException(new \PDOException());
+        if (!in_array($method='setPDOException',$specified)) {
+            $SUT->$method(new \PDOException());
         }
-        if (!in_array('setStatement',$specified)) {
-            $SUT->setStatement(uniqid());
+        if (!in_array($method='setStatement',$specified)) {
+            $SUT->$method(uniqid());
         }
-        if (!in_array('setParasitePDO',$specified)) {
-            $SUT->setParasitePDO($this->returnParasitePDOMock());
+        if (!in_array($method='setParasitePDO',$specified)) {
+            $SUT->$method($this->returnParasitePDOMock());
         }
-        if (!in_array('setFormatExceptionMessage',$specified)) {
-            $SUT->setFormatExceptionMessage($this->returnFormatExceptionMessageMock());
+        if (!in_array($method='setFormatExceptionMessage',$specified)) {
+            $SUT->$method($this->returnFormatExceptionMessageMock());
         }
+        if (!in_array($method='setErrorInfo',$specified)) {
+            $SUT->$method($this->returnErrorInfoNoErrorStub());
+        }
+        if (!in_array($method='setDriverName',$specified)) {
+            $SUT->$method(uniqid());
+        }
+    }
+    
+    private function returnErrorInfoNoErrorStub()
+    {
+        return [
+            '00000',
+            null,
+            null
+        ];
     }
     
     private function returnFormatExceptionMessageMock()

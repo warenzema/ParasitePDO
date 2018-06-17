@@ -32,6 +32,18 @@ class RethrowLockWaitTimeoutException implements IRethrowException
         $this->ParasitePDO = $ParasitePDO;
     }
     
+    private $errorInfo;
+    public function setErrorInfo(array $errorInfo)
+    {
+        $this->errorInfo = $errorInfo;
+    }
+    
+    private $driverName;
+    public function setDriverName(string $driverName)
+    {
+        $this->driverName = $driverName;
+    }
+    
     public function run()
     {
         if (null === $this->PDOException) {
@@ -46,11 +58,14 @@ class RethrowLockWaitTimeoutException implements IRethrowException
         if (null === $this->FormatExceptionMessage) {
             throw new SetterRequiredException();
         }
+        if (null === $this->errorInfo) {
+            throw new SetterRequiredException();
+        }
+        if (null === $this->driverName) {
+            throw new SetterRequiredException();
+        }
         
-        $errorInfo = $this->ParasitePDO->errorInfo();
-        $driver = $this->ParasitePDO->getAttribute(\PDO::ATTR_DRIVER_NAME);
-        //TODO PDOStatement has to give the error info
-        if ('mysql' == $driver && 1205 == $errorInfo[1]) {
+        if ('mysql' == $this->driverName && 1205 == $this->errorInfo[1]) {
             $this->rethrowLockWaitTimeout();
         }
     }

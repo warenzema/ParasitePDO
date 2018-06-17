@@ -138,6 +138,10 @@ class ParasitePDO extends \PDO
             $RethrowException->setPDOException($PDOException);
             $RethrowException->setStatement($statement);
             $RethrowException->setParasitePDO($this);
+            $RethrowException->setErrorInfo($this->errorInfo());
+            $RethrowException->setDriverName(
+                $this->getAttribute(\PDO::ATTR_DRIVER_NAME)
+            );
             $RethrowException->run();
         }
         throw $PDOException;

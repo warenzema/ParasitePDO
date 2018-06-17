@@ -315,14 +315,14 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     }
     
     /**
-     * @dataProviders providerTrueFalse3
+     * @dataProvider providerTrueFalse3
      * 
      */
     
     public function testRethrowOnLockWaitTimeout(
-        $injectPDOInsteadOfConstruct=true,
-        $addRethrowLockWaitTimeout=true,
-        $usePrepareInsteadOfQuery=true
+        $injectPDOInsteadOfConstruct,
+        $addRethrowLockWaitTimeout,
+        $usePrepareInsteadOfQuery
     )
     {
         $this->setupDatabaseAndTable();

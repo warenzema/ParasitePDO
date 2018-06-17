@@ -28,6 +28,10 @@ class RethrowExceptionWithQueryInfo implements IRethrowException
     
     public function setParasitePDO(ParasitePDO $ParasitePDO){}
     
+    public function setErrorInfo(array $errorInfo){}
+    
+    public function setDriverName(string $driverName){}
+    
     public function run()
     {
         if (null === $this->PDOException) {

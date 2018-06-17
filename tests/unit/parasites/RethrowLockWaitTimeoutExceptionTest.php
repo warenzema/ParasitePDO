@@ -2,9 +2,9 @@
 require_once __DIR__.'/../../TestHelpers.php';
 
 use PHPUnit\Framework\TestCase;
-use ParasitePDO\parasites\RethrowTransactionRollbackException;
+use ParasitePDO\parasites\RethrowLockWaitTimeoutException;
 
-class RethrowTransactionRollbackExceptionTest extends TestCase
+class RethrowLockWaitTimeoutExceptionTest extends TestCase
 {
     use \TestHelpers;
     /**
@@ -91,51 +91,6 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $SUT->run();
     }
     
-    public function provider40000To40999()
-    {
-        return [
-            [40000],
-            [40001],
-            [40100],
-            [40500],
-            [40999],
-        ];
-    }
-    
-    /**
-     * @dataProvider provider40000To40999
-     * 
-     * @group run()
-     * 
-     * @testdox run() throws TransactionRollbackException if 40000 <= $code < 41000, where $code is the 2nd argument of the setPDOException() arg's constructor
-     */
-    
-    public function testRunThrowsTransactionRollbackExIfIn40000CodeRange(
-        $code   
-    )
-    {
-        $PDOException = new \PDOException(
-            uniqid(),
-            $code,
-            null
-        );
-        $statement = uniqid();
-        
-        $ParasitePDO = $this->returnParasitePDOStub();
-        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
-        
-        $SUT = $this->returnSubjectUnderTest();
-        
-        $SUT->setPDOException($PDOException);
-        $SUT->setStatement($statement);
-        $SUT->setParasitePDO($ParasitePDO);
-        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
-        
-        $this->expectException('ParasitePDO\exceptions\TransactionRollbackException');
-        
-        $SUT->run();
-    }
-    
     /**
      * @dataProvider providerTrueFalse1
      * 
@@ -150,7 +105,7 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
     {
         $PDOException = new \PDOException(
            $previousExceptionMessage = uniqid(),
-            40001,
+            00000,
             null
         );
         $statement = uniqid();
@@ -187,6 +142,19 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
             ->will($this->returnValue($fullProcesslist));
         
         $parasitePdoAt = 0;
+        $ParasitePDO
+            ->expects($this->at($parasitePdoAt++))
+            ->method('errorInfo')
+            ->will($this->returnValue([
+                'HY000',
+                1205,
+                'Lock wait timeout exceeded; try restarting transaction'
+            ]));
+        $ParasitePDO
+            ->expects($this->at($parasitePdoAt++))
+            ->method('getAttribute')
+            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
+            ->will($this->returnValue('mysql'));
         $ParasitePDO
             ->expects($this->at($parasitePdoAt++))
             ->method('query')
@@ -239,7 +207,7 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
             $SUT->setBoundInputParams($boundInputParams);
         }
         
-        $this->expectException('ParasitePDO\exceptions\TransactionRollbackException');
+        $this->expectException('ParasitePDO\exceptions\LockWaitTimeoutException');
         $this->expectExceptionMessage($formattedExceptionMessage);
         
         $SUT->run();
@@ -248,56 +216,31 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
     /**
      * @group run()
      * 
-     * @testdox run() sets the setPDOException()'s arg to the TransactionRollbackException's previous exception if the exception is thrown
+     * @testdox run() throws LockWaitTimeoutException if the setPDOException()'s arg's message contains text indicating there is a lock wait timeout, using MySQL's syntax
      */
     
-    public function testThrownExceptionSetsPrevExceptionAsSetPDOException()
+    public function testIfPrevExceptionHasMysqlLockWaitThenThrowsLockWait()
     {
         $PDOException = new \PDOException(
-            uniqid(),
-            40001,
-            null
-        );
-        $statement = uniqid();
-        
-        $ParasitePDO = $this->returnParasitePDOStub();
-        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
-        
-        $SUT = $this->returnSubjectUnderTest();
-        
-        $SUT->setPDOException($PDOException);
-        $SUT->setStatement($statement);
-        $SUT->setParasitePDO($ParasitePDO);
-        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
-        
-        $exceptionCaught = false;
-        try {
-            $SUT->run();
-        } catch (\Exception $e) {
-            $exceptionCaught = true;
-            $this->assertSame(
-                $PDOException,
-                $e->getPrevious()
-            );
-        }
-        $this->assertTrue($exceptionCaught);
-    }
-    
-    /**
-     * @group run()
-     * 
-     * @testdox run() throws DeadlockException instead of TransactionRollbackException if the setPDOException()'s arg's message contains text indicating there is a deadlock, using MySQL's syntax
-     */
-    
-    public function testIfPrevExceptionHasMysqlDeadlockThenThrowsDeadlock()
-    {
-        $PDOException = new \PDOException(
-            "PDOException: SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock; try restarting transaction",
-            40001,
+            "PDOException: SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction",
+            00000,
             null
         );
         $statement = uniqid();
         $ParasitePDO = $this->returnParasitePDOStub();
+        $ParasitePDO
+            ->expects($this->once())
+            ->method('errorInfo')
+            ->will($this->returnValue([
+                'HY000',
+                1205,
+                'Lock wait timeout exceeded; try restarting transaction'
+            ]));
+        $ParasitePDO
+            ->expects($this->once())
+            ->method('getAttribute')
+            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
+            ->will($this->returnValue('mysql'));
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
@@ -308,7 +251,7 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $SUT->setParasitePDO($ParasitePDO);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
         
-        $this->expectException('ParasitePDO\exceptions\DeadlockException');
+        $this->expectException('ParasitePDO\exceptions\LockWaitTimeoutException');
         
         $SUT->run();
     }
@@ -316,18 +259,31 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
     /**
      * @group run()
      * 
-     * @testdox run() sets the setPDOException()'s arg to the DeadlockException previous exception if the exception is thrown
+     * @testdox run() sets the setPDOException()'s arg to the LockWaitTimeoutException's previous exception if the exception is thrown
      */
     
-    public function testDeadlockSetsPrevExceptionAsSetPDOException()
+    public function testLockWaitSetsPrevExceptionAsSetPDOException()
     {
         $PDOException = new \PDOException(
-            "PDOException: SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock; try restarting transaction",
-            40001,
+            "PDOException: SQLSTATE[HY000]: General error: 1205 Lock wait timeout exceeded; try restarting transaction",
+            00000,
             null
         );
         $statement = uniqid();
         $ParasitePDO = $this->returnParasitePDOStub();
+        $ParasitePDO
+            ->expects($this->once())
+            ->method('errorInfo')
+            ->will($this->returnValue([
+                'HY000',
+                1205,
+                'Lock wait timeout exceeded; try restarting transaction'
+            ]));
+        $ParasitePDO
+            ->expects($this->once())
+            ->method('getAttribute')
+            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
+            ->will($this->returnValue('mysql'));
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
@@ -348,16 +304,98 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
                 $e->getPrevious()
             );
             $this->assertInstanceOf(
-                'ParasitePDO\exceptions\DeadlockException',
+                'ParasitePDO\exceptions\LockWaitTimeoutException',
                 $e
             );
         }
         $this->assertTrue($exceptionCaught);
     }
     
+    /**
+     * @group run()
+     * 
+     * @testdox run() does nothing if setParasitePDO()'s arg::errorInfo() does not return error code 1205 for a lock wait timeout
+     */
+    
+    public function testDoesNothingIfExceptionIsNotLockWaitTimeout()
+    {
+        $PDOException = new \PDOException(
+            "PDOException: SQLSTATE[HY000]: ".uniqid(),
+            00000,
+            null
+        );
+        $statement = uniqid();
+        $ParasitePDO = $this->returnParasitePDOStub();
+        $ParasitePDO
+            ->expects($this->once())
+            ->method('errorInfo')
+            ->will($this->returnValue([
+                'HY000',
+                0001,
+                uniqid(),
+            ]));
+        $ParasitePDO
+            ->expects($this->once())
+            ->method('getAttribute')
+            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
+            ->will($this->returnValue('mysql'));
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setParasitePDO($ParasitePDO);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        
+        $SUT->run();
+    }
+    
+    /**
+     * @group run()
+     * 
+     * @testdox run() does nothing if setParasitePDO()'s arg does not indicate that the driver is 'mysql'
+     */
+    
+    public function testDoesNothingIfDriverIsNotMysql()
+    {
+        $PDOException = new \PDOException(
+            "PDOException: SQLSTATE[HY000]: ".uniqid(),
+            00000,
+            null
+        );
+        $statement = uniqid();
+        $ParasitePDO = $this->returnParasitePDOStub();
+        $ParasitePDO
+            ->expects($this->once())
+            ->method('errorInfo')
+            ->will($this->returnValue([
+                'HY000',
+                1205,
+                uniqid(),
+            ]));
+        $ParasitePDO
+            ->expects($this->once())
+            ->method('getAttribute')
+            ->with($this->equalTo(\PDO::ATTR_DRIVER_NAME))
+            ->will($this->returnValue(uniqid()));
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setParasitePDO($ParasitePDO);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        
+        $SUT->run();
+    }
+    
     private function returnSubjectUnderTest()
     {
-        return new RethrowTransactionRollbackException();
+        return new RethrowLockWaitTimeoutException();
     }
     
     private function setRequiredSettersExceptAsSpecified(

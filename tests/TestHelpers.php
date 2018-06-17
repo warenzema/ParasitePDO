@@ -17,6 +17,14 @@ trait TestHelpers {
         );
     }
     
+    public function providerTrueFalse3()
+    {
+        return $this->mergeDataProviders(
+            $this->providerTrueFalse2(),
+            $this->providerTrueFalse1()
+        );
+    }
+    
     public function mergeDataProviders($provider1,$provider2)
     {
         $provider = [];

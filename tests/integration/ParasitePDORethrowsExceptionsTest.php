@@ -10,6 +10,9 @@ use ParasitePDO\parasites\RethrowConstraintViolationExceptionFactory;
 use ParasitePDO\parasites\RethrowExceptionWithQueryInfoFactory;
 use ParasitePDO\exceptions\DeadlockException;
 use ParasitePDO\parasites\RethrowTransactionRollbackExceptionFactory;
+use ParasitePDO\exceptions\LockWaitTimeoutException;
+use ParasitePDO\parasites\RethrowLockWaitTimeoutException;
+use ParasitePDO\parasites\RethrowLockWaitTimeoutExceptionFactory;
 
 class ParasitePDORethrowsExceptionsTest extends TestCase
 {
@@ -247,13 +250,14 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     }
     
     /**
-     * @dataProvider providerTrueFalse2
+     * @dataProvider providerTrueFalse3
      * 
      */
     
     public function testRethrowOnDeadlockWithQuery(
         $injectPDOInsteadOfConstruct,
-        $addRethrowTransactionRollback
+        $addRethrowTransactionRollback,
+        $usePrepareInsteadOfQuery
     )
     {
         $this->setupDatabaseAndTable();
@@ -289,7 +293,12 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
             $ParasitePDO1->query($selectForUpdate1);
             exec($command);
             sleep(1);
-            $ParasitePDO1->query($selectForUpdate2);
+            if ($usePrepareInsteadOfQuery) {
+                $Statement1 = $ParasitePDO1->prepare($selectForUpdate2);
+                $Statement1->execute();
+            } else {
+                $ParasitePDO1->query($selectForUpdate2);
+            }
         } catch (\Exception $e) {
             $exceptionCaught = true;
             $isParasitePDOException = $e instanceof DeadlockException;
@@ -306,32 +315,36 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
     }
     
     /**
-     * @dataProvider providerTrueFalse2
+     * @dataProviders providerTrueFalse3
      * 
      */
     
-    public function testRethrowOnDeadlockWithPrepare(
-        $injectPDOInsteadOfConstruct,
-        $addRethrowTransactionRollback
+    public function testRethrowOnLockWaitTimeout(
+        $injectPDOInsteadOfConstruct=true,
+        $addRethrowLockWaitTimeout=true,
+        $usePrepareInsteadOfQuery=true
     )
     {
         $this->setupDatabaseAndTable();
         if ($injectPDOInsteadOfConstruct) {
             $ParasitePDO1 = $this->returnInjectedParasitePDO();
+            $ParasitePDO2 = $this->returnInjectedParasitePDO();
         } else {
             $ParasitePDO1 = $this->returnConstructedParasitePDO();
+            $ParasitePDO2 = $this->returnConstructedParasitePDO();
         }
         $ParasitePDO1->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $ParasitePDO1->query("USE $this->dbname")->execute();
+        $ParasitePDO2->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $ParasitePDO2->query("USE $this->dbname")->execute();
         
         $query = "INSERT INTO $this->tablename (`id`) VALUES (1),(2),(3)";
         $ParasitePDO1->exec($query);
         
         $selectForUpdate1 = "SELECT id FROM $this->tablename WHERE id=1 FOR UPDATE";
-        $selectForUpdate2 = "SELECT id FROM $this->tablename WHERE id=2 FOR UPDATE";
-        if ($addRethrowTransactionRollback) {
-            $ParasitePDO1->addRethrowException(
-                (new RethrowTransactionRollbackExceptionFactory())
+        if ($addRethrowLockWaitTimeout) {
+            $ParasitePDO2->addRethrowException(
+                (new RethrowLockWaitTimeoutExceptionFactory())
                 ->build()
             );
         }
@@ -339,28 +352,28 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         $isParasitePDOException = null;
         $e = null;
         
-        $phpunit = "php ../vendor/bin/phpunit";
-        
-        $command = "$phpunit --filter testDeadlock1 integration/RaceSupportTest > /dev/null 2>&1 &";
         try {
             //need to not wait
             $ParasitePDO1->beginTransaction();
-            $Statement1 = $ParasitePDO1->prepare($selectForUpdate1);
-            $Statement1->execute();
-            exec($command);
-            sleep(1);
-            $Statement2 = $ParasitePDO1->prepare($selectForUpdate2);
-            $Statement2->execute();
+            $ParasitePDO1->query($selectForUpdate1);
+            $ParasitePDO2->exec("SET SESSION innodb_lock_wait_timeout=1");
+            if ($usePrepareInsteadOfQuery) {
+                $Statement1 = $ParasitePDO2->prepare($selectForUpdate1);
+                $Statement1->execute();
+            } else {
+                $ParasitePDO2->query($selectForUpdate1);
+            }
         } catch (\Exception $e) {
             $exceptionCaught = true;
-            $isParasitePDOException = $e instanceof DeadlockException;
+            $isParasitePDOException = $e instanceof LockWaitTimeoutException;
             $this->assertInstanceOf('PDOException', $e);
         }
+        $ParasitePDO1->rollBack();
         
         $this->assertTrue($exceptionCaught);
         
         $this->assertSame(
-            $addRethrowTransactionRollback,
+            $addRethrowLockWaitTimeout,
             $isParasitePDOException,
             $e
         );

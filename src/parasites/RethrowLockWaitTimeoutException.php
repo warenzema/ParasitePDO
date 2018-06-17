@@ -4,11 +4,10 @@ namespace ParasitePDO\parasites;
 use ParasitePDO\hosts\ParasitePDO;
 use ParasitePDO\exceptions\SetterRequiredException;
 use ParasitePDO\formatters\IFormatExceptionMessage;
+use ParasitePDO\exceptions\LockWaitTimeoutException;
 
-class RethrowTransactionRollbackException implements IRethrowException
+class RethrowLockWaitTimeoutException implements IRethrowException
 {
-    private $mysqlDeadlockString = "Serialization failure: 1213 Deadlock found when trying to get lock";
-    
     private $PDOException;
     public function setPDOException(\PDOException $PDOException)
     {
@@ -48,36 +47,35 @@ class RethrowTransactionRollbackException implements IRethrowException
             throw new SetterRequiredException();
         }
         
+        $errorInfo = $this->ParasitePDO->errorInfo();
+        $driver = $this->ParasitePDO->getAttribute(\PDO::ATTR_DRIVER_NAME);
+        //TODO PDOStatement has to give the error info
+        if ('mysql' == $driver && 1205 == $errorInfo[1]) {
+            $this->rethrowLockWaitTimeout();
+        }
+    }
+    
+    private function rethrowLockWaitTimeout()
+    {
         $message = $this->PDOException->getMessage();
         $code = $this->PDOException->getCode();
         $additionalMessage = $this->generateAdditionalMessage();
-        $rethrowExceptionClassName = 'ParasitePDO\exceptions\TransactionRollbackException';
-        if (is_numeric($code) && $code >= 40000 && $code < 41000) {
-            $isMySQLDeadlockException
-                = false !== strpos(
-                    $message,
-                    $this->mysqlDeadlockString
-                );
-            if ($isMySQLDeadlockException) {
-                $rethrowExceptionClassName = 'ParasitePDO\exceptions\DeadlockException';
-            }
             
-            $FormatExceptionMessage = clone $this->FormatExceptionMessage;
-            $FormatExceptionMessage->setPreviousExceptionMessage($message);
-            $FormatExceptionMessage->setQueryString($this->statement);
-            $FormatExceptionMessage->setAdditionalMessage($additionalMessage);
-            if (null !== $this->boundInputParams) {
-                $FormatExceptionMessage
-                    ->setBoundInputParams($this->boundInputParams);
-            }
-            $FormatExceptionMessage->run();
-            
-            throw new $rethrowExceptionClassName(
-                $FormatExceptionMessage->getFormattedExceptionMessage(),
-                $code,
-                $this->PDOException
-            );
+        $FormatExceptionMessage = clone $this->FormatExceptionMessage;
+        $FormatExceptionMessage->setPreviousExceptionMessage($message);
+        $FormatExceptionMessage->setQueryString($this->statement);
+        $FormatExceptionMessage->setAdditionalMessage($additionalMessage);
+        if (null !== $this->boundInputParams) {
+            $FormatExceptionMessage
+                ->setBoundInputParams($this->boundInputParams);
         }
+        $FormatExceptionMessage->run();
+        
+        throw new LockWaitTimeoutException(
+            $FormatExceptionMessage->getFormattedExceptionMessage(),
+            $code,
+            $this->PDOException
+        );
     }
     
     private function generateAdditionalMessage()

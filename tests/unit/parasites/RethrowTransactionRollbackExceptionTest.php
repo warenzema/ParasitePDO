@@ -91,6 +91,48 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $SUT->run();
     }
     
+    /**
+     * @group setErrorInfo()
+     * @group run()
+     * 
+     * @testdox run() throws SetterRequiredException if not setErrorInfo()
+     */
+    
+    public function testRunThrowsSetterRequiredIfNotSetErrorInfo()
+    {
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $this->setRequiredSettersExceptAsSpecified(
+            $SUT,
+            ['setErrorInfo']
+        );
+        
+        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        
+        $SUT->run();
+    }
+    
+    /**
+     * @group setDriverName()
+     * @group run()
+     * 
+     * @testdox run() throws SetterRequiredException if not setDriverName()
+     */
+    
+    public function testRunThrowsSetterRequiredIfNotSetDriverName()
+    {
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $this->setRequiredSettersExceptAsSpecified(
+            $SUT,
+            ['setDriverName']
+        );
+        
+        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        
+        $SUT->run();
+    }
+    
     public function provider40000To40999()
     {
         return [
@@ -124,12 +166,21 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $ParasitePDO = $this->returnParasitePDOStub();
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
+        $errorInfo = [
+            $code,
+            1234,
+            uniqid()
+        ];
+        $driverName = uniqid();
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setParasitePDO($ParasitePDO);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         $this->expectException('ParasitePDO\exceptions\TransactionRollbackException');
         
@@ -141,7 +192,7 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
      * 
      * @group run()
      * 
-     * @testdox run() formats an exception message using the previous exception message and the query string if the exception is thrown; Also the boundInputParams are passed, if set; Also, the database is queried with `SHOW ENGINE INNODB STATUS` and `SHOW FULL PROCESSLIST`, and their respective outputs added as additional information
+     * @testdox run() formats an exception message using the previous exception message and the query string if the exception is thrown; Also the boundInputParams are passed, if set; Also, if driverName == 'mysql', the database is queried with `SHOW ENGINE INNODB STATUS` and `SHOW FULL PROCESSLIST`, and their respective outputs added as additional information
      */
     
     public function testIfExceptionThrownThenMessageIsFormatted(
@@ -156,6 +207,13 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $statement = uniqid();
         $boundInputParams = [uniqid()=>uniqid()];
         $ParasitePDO = $this->returnParasitePDOMock();
+        
+        $errorInfo = [
+            '40001',
+            1213,
+            uniqid()
+        ];
+        $driverName = 'mysql';
         
         $innoDbStatus = [
             'Type'=>uniqid(),
@@ -235,6 +293,8 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $SUT->setStatement($statement);
         $SUT->setParasitePDO($ParasitePDO);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         if ($setBoundInputParams) {
             $SUT->setBoundInputParams($boundInputParams);
         }
@@ -248,7 +308,69 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
     /**
      * @group run()
      * 
-     * @testdox run() sets the setPDOException()'s arg to the TransactionRollbackException's previous exception if the exception is thrown
+     * @testdox run() does not set additional information to the message if driverName != 'mysql'
+     */
+    
+    public function testIfExceptionButNotMysqlThenNotQueryAdditional()
+    {
+        $PDOException = new \PDOException(
+           $previousExceptionMessage = uniqid(),
+            40001,
+            null
+        );
+        $statement = uniqid();
+        $ParasitePDO = $this->returnParasitePDOMock();
+        
+        $errorInfo = [
+            '40001',
+            1234,
+            uniqid()
+        ];
+        $driverName = uniqid();
+        
+        $ParasitePDO
+            ->expects($this->never())
+            ->method('query');
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('setPreviousExceptionMessage')
+            ->with($this->equalTo($previousExceptionMessage));
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('setQueryString')
+            ->with($this->equalTo($statement));
+        $FormatExceptionMessage
+            ->expects($this->never())
+            ->method('setAdditionalMessage');
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('run');
+        $FormatExceptionMessage
+            ->expects($this->once())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue($formattedExceptionMessage=uniqid()));
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setParasitePDO($ParasitePDO);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
+        
+        $this->expectException('ParasitePDO\exceptions\TransactionRollbackException');
+        $this->expectExceptionMessage($formattedExceptionMessage);
+        
+        $SUT->run();
+    }
+    
+    /**
+     * @group run()
+     * 
+     * @testdox run() sets the PDOException to the TransactionRollbackException's previous exception if the exception is thrown
      */
     
     public function testThrownExceptionSetsPrevExceptionAsSetPDOException()
@@ -263,12 +385,21 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $ParasitePDO = $this->returnParasitePDOStub();
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
+        $errorInfo = [
+            '40001',
+            1234,
+            uniqid()
+        ];
+        $driverName = uniqid();
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setParasitePDO($ParasitePDO);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         $exceptionCaught = false;
         try {
@@ -279,6 +410,10 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
                 $PDOException,
                 $e->getPrevious()
             );
+            $this->assertInstanceOf(
+                'ParasitePDO\exceptions\TransactionRollbackException',
+                $e
+            );
         }
         $this->assertTrue($exceptionCaught);
     }
@@ -286,13 +421,13 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
     /**
      * @group run()
      * 
-     * @testdox run() throws DeadlockException instead of TransactionRollbackException if the setPDOException()'s arg's message contains text indicating there is a deadlock, using MySQL's syntax
+     * @testdox run() throws DeadlockException instead of TransactionRollbackException if the driverName == 'mysql' and the errorInfo array contains code 1213, which is MySQL's specific code for deadlocks
      */
     
     public function testIfPrevExceptionHasMysqlDeadlockThenThrowsDeadlock()
     {
         $PDOException = new \PDOException(
-            "PDOException: SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock; try restarting transaction",
+            uniqid(),
             40001,
             null
         );
@@ -301,12 +436,21 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
+        $errorInfo = [
+            '40001',
+            1213,
+            'Deadlock found when trying to get lock; try restarting transaction'
+        ];
+        $driverName = 'mysql';
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setParasitePDO($ParasitePDO);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         $this->expectException('ParasitePDO\exceptions\DeadlockException');
         
@@ -316,13 +460,13 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
     /**
      * @group run()
      * 
-     * @testdox run() sets the setPDOException()'s arg to the DeadlockException previous exception if the exception is thrown
+     * @testdox run() sets the PDOException to the DeadlockException previous exception if the exception is thrown
      */
     
     public function testDeadlockSetsPrevExceptionAsSetPDOException()
     {
         $PDOException = new \PDOException(
-            "PDOException: SQLSTATE[40001]: Serialization failure: 1213 Deadlock found when trying to get lock; try restarting transaction",
+            uniqid(),
             40001,
             null
         );
@@ -331,12 +475,21 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
         
+        $errorInfo = [
+            '40001',
+            1213,
+            'Deadlock found when trying to get lock; try restarting transaction'
+        ];
+        $driverName = 'mysql';
+        
         $SUT = $this->returnSubjectUnderTest();
         
         $SUT->setPDOException($PDOException);
         $SUT->setStatement($statement);
         $SUT->setParasitePDO($ParasitePDO);
         $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
         
         $exceptionCaught = false;
         try {
@@ -355,6 +508,96 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $this->assertTrue($exceptionCaught);
     }
     
+    /**
+     * @doesNotPerformAssertions
+     * 
+     * @group run()
+     * 
+     * @testdox run() does nothing if the exception code does not start with '40' and the errorInfo does not include error code 1213 for a deadlock exception
+     */
+    
+    public function testDoesNothingIfExceptionIsNotTransactionRollback()
+    {
+        $PDOException = new \PDOException(
+            "PDOException: SQLSTATE[HY000]: ".uniqid(),
+            00000,
+            null
+        );
+        $statement = uniqid();
+        $ParasitePDO = $this->returnParasitePDOStub();
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $errorInfo = [
+            'HY000',
+            9999,
+            null
+        ];
+        $driverName = 'mysql';
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setParasitePDO($ParasitePDO);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
+        
+        $SUT->run();
+    }
+    
+    /**
+     * @dataProvider providerTrueFalse1
+     * 
+     * @group run()
+     * 
+     * @testdox run() throws TransactionRollbackException instead of DeadlockException if the driverName != 'mysql', even if the errorInfo code is 1213
+     */
+    
+    public function testStaysWithRollbackExceptionIfDriverNotMysql(
+        $driverIsMysql
+    )
+    {
+        $PDOException = new \PDOException(
+            "PDOException: SQLSTATE[HY000]: ".uniqid(),
+            '40001',
+            null
+        );
+        $statement = uniqid();
+        $ParasitePDO = $this->returnParasitePDOStub();
+        
+        $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        
+        $errorInfo = [
+            '40001',
+            1213,
+            'Deadlock found when trying to get lock; try restarting transaction'
+        ];
+        if ($driverIsMysql) {
+            $driverName = 'mysql';
+        } else {
+            $driverName = uniqid();
+        }
+        
+        $SUT = $this->returnSubjectUnderTest();
+        
+        $SUT->setPDOException($PDOException);
+        $SUT->setStatement($statement);
+        $SUT->setParasitePDO($ParasitePDO);
+        $SUT->setFormatExceptionMessage($FormatExceptionMessage);
+        $SUT->setErrorInfo($errorInfo);
+        $SUT->setDriverName($driverName);
+        
+        if ($driverIsMysql) {
+            $this->expectException('ParasitePDO\exceptions\DeadlockException');
+        } else {
+            $this->expectException('ParasitePDO\exceptions\TransactionRollbackException');
+        }
+        
+        $SUT->run();
+    }
+    
     private function returnSubjectUnderTest()
     {
         return new RethrowTransactionRollbackException();
@@ -365,18 +608,33 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         array $specified
     )
     {
-        if (!in_array('setPDOException',$specified)) {
-            $SUT->setPDOException(new \PDOException());
+        if (!in_array($method='setPDOException',$specified)) {
+            $SUT->$method(new \PDOException());
         }
-        if (!in_array('setStatement',$specified)) {
-            $SUT->setStatement(uniqid());
+        if (!in_array($method='setStatement',$specified)) {
+            $SUT->$method(uniqid());
         }
-        if (!in_array('setParasitePDO',$specified)) {
-            $SUT->setParasitePDO($this->returnParasitePDOMock());
+        if (!in_array($method='setParasitePDO',$specified)) {
+            $SUT->$method($this->returnParasitePDOMock());
         }
-        if (!in_array('setFormatExceptionMessage',$specified)) {
-            $SUT->setFormatExceptionMessage($this->returnFormatExceptionMessageMock());
+        if (!in_array($method='setFormatExceptionMessage',$specified)) {
+            $SUT->$method($this->returnFormatExceptionMessageMock());
         }
+        if (!in_array($method='setErrorInfo',$specified)) {
+            $SUT->$method($this->returnErrorInfoNoErrorStub());
+        }
+        if (!in_array($method='setDriverName',$specified)) {
+            $SUT->$method(uniqid());
+        }
+    }
+    
+    private function returnErrorInfoNoErrorStub()
+    {
+        return [
+            '00000',
+            null,
+            null
+        ];
     }
     
     private function returnFormatExceptionMessageMock()

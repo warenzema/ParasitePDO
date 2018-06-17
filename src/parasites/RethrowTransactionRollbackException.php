@@ -33,6 +33,18 @@ class RethrowTransactionRollbackException implements IRethrowException
         $this->ParasitePDO = $ParasitePDO;
     }
     
+    private $errorInfo;
+    public function setErrorInfo(array $errorInfo)
+    {
+        $this->errorInfo = $errorInfo;
+    }
+    
+    private $driverName;
+    public function setDriverName(string $driverName)
+    {
+        $this->driverName = $driverName;
+    }
+    
     public function run()
     {
         if (null === $this->PDOException) {
@@ -47,25 +59,32 @@ class RethrowTransactionRollbackException implements IRethrowException
         if (null === $this->FormatExceptionMessage) {
             throw new SetterRequiredException();
         }
+        if (null === $this->errorInfo) {
+            throw new SetterRequiredException();
+        }
+        if (null === $this->driverName) {
+            throw new SetterRequiredException();
+        }
         
         $message = $this->PDOException->getMessage();
         $code = $this->PDOException->getCode();
-        $additionalMessage = $this->generateAdditionalMessage();
-        $rethrowExceptionClassName = 'ParasitePDO\exceptions\TransactionRollbackException';
-        if (is_numeric($code) && $code >= 40000 && $code < 41000) {
-            $isMySQLDeadlockException
-                = false !== strpos(
-                    $message,
-                    $this->mysqlDeadlockString
-                );
-            if ($isMySQLDeadlockException) {
-                $rethrowExceptionClassName = 'ParasitePDO\exceptions\DeadlockException';
-            }
-            
+        $rethrowExceptionClassName = false;
+        $additionalMessage = false;
+        if (0 === strpos((string)$code, '40')) {
+            $rethrowExceptionClassName = 'ParasitePDO\exceptions\TransactionRollbackException';
+        }
+        if ('mysql' == $this->driverName && 1213 == $this->errorInfo[1]) {
+            $rethrowExceptionClassName = 'ParasitePDO\exceptions\DeadlockException';
+            $additionalMessage = $this->generateAdditionalMessage();
+        }
+        
+        if ($rethrowExceptionClassName) {
             $FormatExceptionMessage = clone $this->FormatExceptionMessage;
             $FormatExceptionMessage->setPreviousExceptionMessage($message);
             $FormatExceptionMessage->setQueryString($this->statement);
-            $FormatExceptionMessage->setAdditionalMessage($additionalMessage);
+            if ($additionalMessage) {
+                $FormatExceptionMessage->setAdditionalMessage($additionalMessage);
+            }
             if (null !== $this->boundInputParams) {
                 $FormatExceptionMessage
                     ->setBoundInputParams($this->boundInputParams);

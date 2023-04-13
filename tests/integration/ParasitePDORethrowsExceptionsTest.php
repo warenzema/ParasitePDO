@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__.'/../TestHelpers.php';
+require_once __DIR__.'/../DbConnectionTrait.php';
 
 use PHPUnit\Framework\TestCase;
 use ParasitePDO\hosts\ParasitePDO;
@@ -17,13 +18,9 @@ use ParasitePDO\parasites\RethrowLockWaitTimeoutExceptionFactory;
 class ParasitePDORethrowsExceptionsTest extends TestCase
 {
     use TestHelpers;
-    private $dsn = 'mysql:host=localhost';
-    private $username = 'dbuser';
-    private $password = '123';
-    private $dbname = 'parasitepdotest';
-    private $tablename = 'parasite_pdo_test_table';
+    use DbConnectionTrait;
     
-    protected function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
         
@@ -286,7 +283,7 @@ class ParasitePDORethrowsExceptionsTest extends TestCase
         
         $phpunit = "php ../vendor/bin/phpunit";
         
-        $command = "$phpunit --filter testDeadlock1 integration/RaceSupportTest > /dev/null 2>&1 &";
+        $command = "$phpunit --filter testDeadlock1 integration/RaceSupportTest.php > /dev/null 2>&1 &";
         try {
             //need to not wait
             $ParasitePDO1->beginTransaction();

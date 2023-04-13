@@ -1,14 +1,12 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
+require_once __DIR__.'/../DbConnectionTrait.php';
+
 class RaceSupportTest extends TestCase
 {
-    private $dsn = 'mysql:host=localhost';
-    private $username = 'dbuser';
-    private $password = '123';
-    private $dbname = 'parasitepdotest';
-    private $tablename = 'parasite_pdo_test_table';
-    
+    use DbConnectionTrait;
+
     public function testDeadlock1()
     {
         $PDO = new \PDO($this->dsn,$this->username,$this->password);

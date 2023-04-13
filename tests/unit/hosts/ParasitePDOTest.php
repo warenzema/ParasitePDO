@@ -2,16 +2,14 @@
 namespace ParasitePDO\hosts;
 
 require_once __DIR__.'/../../TestHelpers.php';
+require_once __DIR__.'/../../DbConnectionTrait.php';
 
 use PHPUnit\Framework\TestCase;
 
 class ParasitePDOTest extends TestCase
 {
     use \TestHelpers;
-    private $dsn = 'mysql:host=localhost';
-    private $username = 'dbuser';
-    private $password = '123';
-    private $dbname = 'parasitepdotest';
+    use \DbConnectionTrait;
     
     public function providerPDOClassNames()
     {
@@ -88,7 +86,7 @@ class ParasitePDOTest extends TestCase
      * 
      * @group query()
      * 
-     * @testdox query()===false if arg is invalid SQL statement
+     * @testdox query() throws \PDOException if arg is invalid SQL statement
      */
     
     public function testReturnedQueryInvalidStatementIsFalse(
@@ -100,10 +98,11 @@ class ParasitePDOTest extends TestCase
         } else {
             $ParasitePDO = $this->returnConstructedParasitePDO();
         }
+
+        $this->expectException('PDOException');
         
-        $statement = $ParasitePDO->query("invalid statement");
-        
-        $this->assertFalse($statement);
+        $ParasitePDO->query("invalid statement");
+
     }
     
     /**
@@ -167,7 +166,7 @@ class ParasitePDOTest extends TestCase
         'lastInsertId'=>[],
         'prepare'=>['blah blah'],
         'query'=>['blah blah'],
-        'quote'=>[],
+        'quote'=>['blah'],
         'rollBack'=>[],
         'setAttribute'=>[\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION],
     ];

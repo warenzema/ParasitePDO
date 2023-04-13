@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/../TestHelpers.php';
+require_once __DIR__.'/../DbConnectionTrait.php';
 
 use ParasitePDO\hosts\ParasitePDO;
 use PHPUnit\Framework\TestCase;
@@ -7,10 +8,7 @@ use PHPUnit\Framework\TestCase;
 class ParasitePDOStatementsFunctionAsParentTest extends TestCase
 {
     use TestHelpers;
-    private $dsn = 'mysql:host=localhost';
-    private $username = 'dbuser';
-    private $password = '123';
-    private $dbname = 'parasitepdotest';
+    use DbConnectionTrait;
     
     /**
      * @dataProvider providerTrueFalse2

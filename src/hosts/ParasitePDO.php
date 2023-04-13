@@ -80,6 +80,14 @@ class ParasitePDO extends \PDO
             func_get_args()
         );
     }
+
+    public function quote(string $string, int $type = \PDO::PARAM_STR)
+    {
+        return call_user_func_array(
+            [$this->instance,__FUNCTION__],
+            func_get_args()
+        );
+    }
     
     public function lastInsertId($seqname = NULL)
     {
@@ -98,7 +106,7 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function query()
+    public function query(string $query, ?int $fetchMode = null, ...$fetchModeArgs)
     {
         $this->setStatementClass();
         try {

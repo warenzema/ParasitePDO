@@ -243,18 +243,18 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
             ->method('fetchAll')
             ->with($this->equalTo(PDO::FETCH_ASSOC))
             ->will($this->returnValue($fullProcesslist));
-        
-        $parasitePdoAt = 0;
+
         $ParasitePDO
-            ->expects($this->at($parasitePdoAt++))
+            ->expects($this->exactly(2))
             ->method('query')
-            ->with($this->equalTo('SHOW ENGINE INNODB STATUS'))
-            ->will($this->returnValue($ParasitePDOStatement1));
-        $ParasitePDO
-            ->expects($this->at($parasitePdoAt++))
-            ->method('query')
-            ->with($this->equalTo('SHOW FULL PROCESSLIST'))
-            ->will($this->returnValue($ParasitePDOStatement2));
+            ->withConsecutive(
+                [$this->equalTo('SHOW ENGINE INNODB STATUS')],
+                [$this->equalTo('SHOW FULL PROCESSLIST')]
+            )
+            ->willReturnOnConsecutiveCalls(
+                $this->returnValue($ParasitePDOStatement1),
+                $this->returnValue($ParasitePDOStatement2)
+            );
         
         $additionalMessage = "InnoDb Status:\n\n$status"
             ."\n\nFull Processlist:\n\n"

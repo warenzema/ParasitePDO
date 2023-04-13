@@ -5,6 +5,15 @@
 			"ParasitePDO\\" : "src/"
 		}
 	},
+	"repositories": [
+		{
+			"type": "vcs",
+			"url": "https://github.com/warenzema/phprun-codestyle.git"
+		}
+	],
+	"require": {
+		"phprun/codestyle": "master@dev"
+	},
 	"require-dev" : {
 		"phpunit/phpunit" : "^9"
 	}

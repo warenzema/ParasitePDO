@@ -25,7 +25,7 @@ class RethrowConstraintViolationExceptionTest extends TestCase
             ['setPDOException']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -46,7 +46,7 @@ class RethrowConstraintViolationExceptionTest extends TestCase
             ['setStatement']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -67,7 +67,7 @@ class RethrowConstraintViolationExceptionTest extends TestCase
             ['setFormatExceptionMessage']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -88,7 +88,7 @@ class RethrowConstraintViolationExceptionTest extends TestCase
             ['setErrorInfo']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -109,7 +109,7 @@ class RethrowConstraintViolationExceptionTest extends TestCase
             ['setDriverName']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }

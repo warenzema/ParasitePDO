@@ -21,7 +21,7 @@ class FormatExceptionMessageWithMaximumInfoTest extends TestCase
             ['setPreviousExceptionMessage']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -42,7 +42,7 @@ class FormatExceptionMessageWithMaximumInfoTest extends TestCase
             ['setQueryString']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -58,7 +58,7 @@ class FormatExceptionMessageWithMaximumInfoTest extends TestCase
     {
         $SUT = $this->returnSubjectUnderTest();
         
-        $this->expectException('ParasitePDO\exceptions\ObjectNotRunYetException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\ObjectNotRunYetException');
         
         $SUT->getFormattedExceptionMessage();
     }

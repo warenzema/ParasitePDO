@@ -2,7 +2,7 @@
 namespace ParasitePDO\parasites;
 
 use ParasitePDO\hosts\ParasitePDO;
-use ParasitePDO\exceptions\SetterRequiredException;
+use PhpRun\CodeStyle\Exceptions\SetterRequiredException;
 use ParasitePDO\formatters\IFormatExceptionMessage;
 use ParasitePDO\exceptions\LockWaitTimeoutException;
 

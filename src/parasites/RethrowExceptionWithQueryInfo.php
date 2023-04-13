@@ -1,7 +1,7 @@
 <?php
 namespace ParasitePDO\parasites;
 
-use ParasitePDO\exceptions\SetterRequiredException;
+use PhpRun\CodeStyle\Exceptions\SetterRequiredException;
 use ParasitePDO\hosts\ParasitePDOException;
 use ParasitePDO\formatters\IFormatExceptionMessage;
 use ParasitePDO\hosts\ParasitePDO;

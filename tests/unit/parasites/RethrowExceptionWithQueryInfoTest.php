@@ -23,7 +23,7 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
             ['setPDOException']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -44,7 +44,7 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
             ['setStatement']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -65,7 +65,7 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
             ['setFormatExceptionMessage']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }

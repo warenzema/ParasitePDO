@@ -4,8 +4,42 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "47028414c9677495e264b13cf7798980",
-    "packages": [],
+    "content-hash": "82f9768aedec891aaee52e83cb1cb7ba",
+    "packages": [
+        {
+            "name": "phprun/codestyle",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:warenzema/phprun-codestyle.git",
+                "reference": "03acbeabb9c9e689864fb8253bed98222d1465ac"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/warenzema/phprun-codestyle/zipball/03acbeabb9c9e689864fb8253bed98222d1465ac",
+                "reference": "03acbeabb9c9e689864fb8253bed98222d1465ac",
+                "shasum": ""
+            },
+            "default-branch": true,
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PhpRun\\": "src/"
+                }
+            },
+            "authors": [
+                {
+                    "name": "Willem Renzema",
+                    "email": "warenzema@gmail.com"
+                }
+            ],
+            "support": {
+                "source": "https://github.com/warenzema/phprun-codestyle/tree/master",
+                "issues": "https://github.com/warenzema/phprun-codestyle/issues"
+            },
+            "time": "2019-07-24T13:00:28+00:00"
+        }
+    ],
     "packages-dev": [
         {
             "name": "doctrine/instantiator",
@@ -1741,7 +1775,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "phprun/codestyle": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],

@@ -23,7 +23,7 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
             ['setPDOException']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -44,7 +44,7 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
             ['setStatement']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -65,7 +65,7 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
             ['setParasitePDO']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -86,7 +86,7 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
             ['setFormatExceptionMessage']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -107,7 +107,7 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
             ['setErrorInfo']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }
@@ -128,7 +128,7 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
             ['setDriverName']
         );
         
-        $this->expectException('ParasitePDO\exceptions\SetterRequiredException');
+        $this->expectException('PhpRun\CodeStyle\Exceptions\SetterRequiredException');
         
         $SUT->run();
     }

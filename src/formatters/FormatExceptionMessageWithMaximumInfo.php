@@ -1,8 +1,8 @@
 <?php
 namespace ParasitePDO\formatters;
 
-use ParasitePDO\exceptions\SetterRequiredException;
-use ParasitePDO\exceptions\ObjectNotRunYetException;
+use PhpRun\CodeStyle\Exceptions\SetterRequiredException;
+use PhpRun\CodeStyle\Exceptions\ObjectNotRunYetException;
 
 class FormatExceptionMessageWithMaximumInfo implements IFormatExceptionMessage
 {

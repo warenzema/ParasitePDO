@@ -86,6 +86,10 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
         $statement = uniqid();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $SUT = $this->returnSubjectUnderTest();
         
@@ -114,6 +118,10 @@ class RethrowExceptionWithQueryInfoTest extends TestCase
         $statement = uniqid();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $SUT = $this->returnSubjectUnderTest();
         

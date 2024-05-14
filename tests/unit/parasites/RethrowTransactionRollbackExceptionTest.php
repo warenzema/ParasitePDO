@@ -165,6 +165,10 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         
         $ParasitePDO = $this->returnParasitePDOStub();
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $errorInfo = [
             $code,
@@ -384,6 +388,10 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         
         $ParasitePDO = $this->returnParasitePDOStub();
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $errorInfo = [
             '40001',
@@ -435,6 +443,10 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $ParasitePDO = $this->returnParasitePDOStub();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $errorInfo = [
             '40001',
@@ -474,6 +486,10 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $ParasitePDO = $this->returnParasitePDOStub();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $errorInfo = [
             '40001',
@@ -568,6 +584,10 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         $ParasitePDO = $this->returnParasitePDOStub();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $errorInfo = [
             '40001',
@@ -594,7 +614,7 @@ class RethrowTransactionRollbackExceptionTest extends TestCase
         } else {
             $this->expectException('ParasitePDO\exceptions\TransactionRollbackException');
         }
-        
+
         $SUT->run();
     }
     

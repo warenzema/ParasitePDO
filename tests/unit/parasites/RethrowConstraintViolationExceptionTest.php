@@ -144,6 +144,10 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $statement = uniqid();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $errorInfo = [
             $code,
@@ -255,6 +259,10 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $driverName = uniqid();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $SUT = $this->returnSubjectUnderTest();
         
@@ -297,6 +305,10 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $driverName = 'mysql';
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $SUT = $this->returnSubjectUnderTest();
         
@@ -334,6 +346,10 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $driverName = 'mysql';
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $SUT = $this->returnSubjectUnderTest();
         
@@ -414,6 +430,10 @@ class RethrowConstraintViolationExceptionTest extends TestCase
         $statement = uniqid();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $errorInfo = [
             '23000',

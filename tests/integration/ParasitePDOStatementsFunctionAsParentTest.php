@@ -89,13 +89,21 @@ class ParasitePDOStatementsFunctionAsParentTest extends TestCase
         $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
         
         $PDOObject->query("USE $this->dbname")->execute();
-        $statement = $PDOObject->query("SELECT COUNT(*) FROM $tablename");
-        
-        $count = $statement->fetchColumn(0);
-        
-        $this->assertSame('0', $count);
+        $query = "SELECT COUNT(*) FROM $tablename";
+
+        $this->assertSame(
+            $this->fetchColumnOfDirectQuery($PDO,$query),
+            $this->fetchColumnOfDirectQuery($PDOObject,$query)
+        );
     }
-    
+
+    private function fetchColumnOfDirectQuery($PDOObject,$query)
+    {
+        $statement = $PDOObject->query($query);
+
+        return $statement->fetchColumn(0);
+    }
+
     /**
      * @param \PDO $PDOObject
      */
@@ -111,24 +119,36 @@ class ParasitePDOStatementsFunctionAsParentTest extends TestCase
         $PDO->query("CREATE TABLE $tablename (`id` INT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
         
         $PDOObject->query("USE $this->dbname")->execute();
-        $statement = $PDOObject->prepare("SELECT COUNT(*) FROM $tablename");
+
+        $query = "SELECT COUNT(*) FROM $tablename";
         
+        $this->assertSame(
+            $this->fetchColumnOfPreparedQuery($PDO,$query),
+            $this->fetchColumnOfPreparedQuery($PDOObject,$query)
+        );
+    }
+
+    private function fetchColumnOfPreparedQuery($PDOObject,$query)
+    {
+        $statement = $PDOObject->prepare($query);
+
         $statement->execute();
-        $count = $statement->fetchColumn(0);
-        
-        $this->assertSame('0', $count);
+        return $statement->fetchColumn(0);
     }
     
     private function returnInjectedParasitePDO()
     {
-        $PDO = new \PDO($this->dsn,$this->username,$this->password);
-        
-        return new ParasitePDO($PDO);
+        return new ParasitePDO($this->returnRealPDO());
     }
     
     private function returnConstructedParasitePDO()
     {
         return new ParasitePDO($this->dsn,$this->username,$this->password);
+    }
+
+    private function returnRealPDO()
+    {
+        return new \PDO($this->dsn,$this->username,$this->password);
     }
 }
 

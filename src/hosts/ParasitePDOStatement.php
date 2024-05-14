@@ -12,7 +12,7 @@ class ParasitePDOStatement extends \PDOStatement
         $this->RethrowExceptions = $RethrowExceptions;
     }
     
-    public function execute($bound_input_params = NULL)
+    public function execute($bound_input_params = NULL):bool
     {
         $args = func_get_args();
         try {

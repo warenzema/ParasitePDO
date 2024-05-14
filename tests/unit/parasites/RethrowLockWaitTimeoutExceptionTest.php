@@ -151,6 +151,10 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
         $ParasitePDO = $this->returnParasitePDOStub();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $errorInfo = [
             'HY000',
@@ -190,6 +194,10 @@ class RethrowLockWaitTimeoutExceptionTest extends TestCase
         $ParasitePDO = $this->returnParasitePDOStub();
         
         $FormatExceptionMessage = $this->returnFormatExceptionMessageMock();
+        $FormatExceptionMessage
+            ->expects($this->any())
+            ->method('getFormattedExceptionMessage')
+            ->will($this->returnValue(''));
         
         $errorInfo = [
             'HY000',

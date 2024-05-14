@@ -18,7 +18,7 @@ class ParasitePDO extends \PDO
         }
     }
     
-    public function beginTransaction()
+    public function beginTransaction():bool
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -26,7 +26,7 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function commit()
+    public function commit():bool
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -34,7 +34,7 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function errorCode()
+    public function errorCode():?string
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -42,7 +42,7 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function errorInfo()
+    public function errorInfo():array
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -50,7 +50,7 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function exec($statement)
+    public function exec($statement):int|false
     {
         try {
             return call_user_func_array(
@@ -65,7 +65,7 @@ class ParasitePDO extends \PDO
         }
     }
     
-    public function getAttribute($attribute)
+    public function getAttribute($attribute):mixed
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -73,7 +73,7 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function inTransaction()
+    public function inTransaction():bool
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -81,7 +81,7 @@ class ParasitePDO extends \PDO
         );
     }
 
-    public function quote(string $string, int $type = \PDO::PARAM_STR)
+    public function quote(string $string, int $type = \PDO::PARAM_STR):string|false
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -89,7 +89,7 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function lastInsertId($seqname = NULL)
+    public function lastInsertId($seqname = NULL):string|false
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -97,7 +97,7 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function prepare($statement, $options = NULL)
+    public function prepare($statement, $options = NULL):ParasitePDOStatement|false
     {
         $this->setStatementClass();
         return call_user_func_array(
@@ -106,7 +106,8 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function query(string $query, ?int $fetchMode = null, ...$fetchModeArgs)
+    public function query(string $query, ?int $fetchMode = null, ...$fetchModeArgs):
+        ParasitePDOStatement|false
     {
         $this->setStatementClass();
         try {
@@ -155,7 +156,7 @@ class ParasitePDO extends \PDO
         throw $PDOException;
     }
     
-    public function rollBack()
+    public function rollBack():bool
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
@@ -163,7 +164,7 @@ class ParasitePDO extends \PDO
         );
     }
     
-    public function setAttribute($attribute,$value)
+    public function setAttribute($attribute,$value):bool
     {
         return call_user_func_array(
             [$this->instance,__FUNCTION__],
